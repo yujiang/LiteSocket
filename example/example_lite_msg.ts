@@ -31,7 +31,7 @@ async function example() {
     // 普通消息：服务端收到 helloMessage，使用另一个消息 ID 返回结果。
     server.onMessage(myMsg.s2c_helloMessage, (socket: IOServerSocket, name: string) => {
         console.log('服务端收到普通消息：', name);
-        socket.send(myMsg.c2s_helloReplyMessage, `你好，${name}！`);
+        socket.sendMsg(myMsg.c2s_helloReplyMessage, `你好，${name}！`);
     });
 
     const helloReply = new Promise<void>(resolve => {

@@ -25,7 +25,7 @@ async function example() {
     // 普通消息：客户端发送 helloMessage，服务器使用另一个消息 ID 回复。
     server.onMessage(helloMessage, (socket: IOServerSocket, name: string) => {
         console.log('服务器收到普通消息：', name);
-        socket.send(helloReplyMessage, `你好，${name}！`);
+        socket.sendMsg(helloReplyMessage, `你好，${name}！`);
     });
     const helloReply = new Promise<void>(resolve => {
         client.onMessage(helloReplyMessage, (message: string) => {

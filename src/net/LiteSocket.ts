@@ -175,7 +175,7 @@ export abstract class LiteSocket {
 		return logHeadEx(this.constructor.name, this.name, func, logtype);
 	}
 
-	send(...args: any[]) : boolean {
+	sendMsg(...args: any[]) : boolean {
 		// console.log(args);
 		return this.emit(NetEventEnum.eventMod, args);
 	}

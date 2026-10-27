@@ -110,7 +110,7 @@ enum Message {
 async function main(): Promise<void> {
     const server = new IOServer('server', console);
     server.onMessage(Message.Hello, (socket: IOServerSocket, name: string) => {
-        socket.send(Message.HelloReply, `Hello, ${name}!`);
+        socket.sendMsg(Message.HelloReply, `Hello, ${name}!`);
     });
     server.onCallback(Message.Add, (_socket: IOServerSocket, a: number, b: number) => {
         return [ErrorEnum.ErrorOk, a + b];

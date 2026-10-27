@@ -98,31 +98,36 @@ test('browser ESM and script builds expose client APIs without server code or No
 });
 
 test('browser-only declarations compile without @types/node or ws', () => {
-    execFileSync(process.execPath, [require.resolve('typescript/bin/tsc'), '-p', 'test/build/tsconfig.browser-types.json'], {
-        cwd: root, stdio: 'pipe',
-    });
+    try {
+        execFileSync(process.execPath, [require.resolve('typescript/bin/tsc'), '-p', 'test/build/tsconfig.browser-types.json'], {
+            cwd: root, stdio: 'pipe', encoding: 'utf8',
+        });
+    } catch (error) {
+        const diagnostics = [error.stdout, error.stderr].filter(Boolean).join('\n');
+        assert.fail(`Browser declaration type check failed:\n${diagnostics || error.message}`);
+    }
 });
 
 for (const platform of ['Node.js', 'browser']) {
-    test(`${platform} build exposes emitMod and exchanges mod messages in both directions`, async context => {
+    test(`${platform} build exposes sendMsg and exchanges mod messages in both directions`, async context => {
         const { server, url, logger } = await listen(context);
         const api = platform === 'browser' ? browser(context).api : full;
-        const client = new api.LiteClient('emit-mod', logger);
+        const client = new api.LiteClient('send-msg', logger);
         context.after(() => client.destroy());
-        assert.equal(client.send(950003, 'not connected'), false);
-        assert.equal((await within(client.connectPromise(url), 'emitMod connection'))[0], true);
+        assert.equal(client.sendMsg(950003, 'not connected'), false);
+        assert.equal((await within(client.connectPromise(url), 'sendMsg connection'))[0], true);
         const received = new Promise(resolve => server.onMessage('mod', (peer, data) => resolve({ peer, data })));
-        assert.equal(client.send(950003, 'payload'), true);
-        const incoming = await within(received, 'emitMod received by server');
+        assert.equal(client.sendMsg(950003, 'payload'), true);
+        const incoming = await within(received, 'sendMsg received by server');
         assert.deepEqual(incoming.data, [950003, 'payload']);
         assert.equal(incoming.peer, server.findById(client.getServerId()));
         const reply = new Promise(resolve => client.on('mod', resolve));
-        assert.equal(incoming.peer.send(950004, 'reply'), true);
-        assert.deepEqual(plain(await within(reply, 'emitMod reply')), [950004, 'reply']);
+        assert.equal(incoming.peer.sendMsg(950004, 'reply'), true);
+        assert.deepEqual(plain(await within(reply, 'sendMsg reply')), [950004, 'reply']);
         const closed = new Promise(resolve => client.onEvent('close', resolve));
         client.close();
-        await within(closed, 'emitMod client close');
-        assert.equal(client.send(950003, 'closed'), false);
+        await within(closed, 'sendMsg client close');
+        assert.equal(client.sendMsg(950003, 'closed'), false);
     });
 }
 
