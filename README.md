@@ -1,6 +1,6 @@
 # LiteSocket
 
-**English | [简体中文](readme_cn.md)**
+**English | [简体中文](README_CN.md)**
 
 One codebase, two builds: a complete Node.js library and a browser client that uses the native WebSocket API.
 
