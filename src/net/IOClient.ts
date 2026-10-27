@@ -143,6 +143,18 @@ export class IOClient {
     //     return this;
     // }
 
+    sendMsg(...args: msgData): void {
+        this.send(args);
+    }
+
+    asendMsg(...args: msgData) {
+        return this.asend(args);
+    }
+
+    asendeMsg(...args: msgData) {
+        return this.asende(args);
+    }
+
     send(data: msgData): void {
         this.callback?.sendMod(NetEventEnum.eventMod, data);
     }

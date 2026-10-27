@@ -110,7 +110,7 @@ enum Message {
 async function main(): Promise<void> {
     const server = new IOServer('server', console);
     server.onMessage(Message.Hello, (socket: IOServerSocket, name: string) => {
-        socket.emitMod(Message.HelloReply, `你好, ${name}!`);
+        socket.send(Message.HelloReply, `你好, ${name}!`);
     });
     server.onCallback(Message.Add, (_socket: IOServerSocket, a: number, b: number) => {
         return [ErrorEnum.ErrorOk, a + b];
@@ -166,28 +166,7 @@ void main().catch(console.error);
 ```html
 <script type="module">
   import { IOClient, ErrorEnum } from './lib/client/index.js';
-
-  const Message = { Hello: 960001, HelloReply: 960002, Add: 960003 };
-  const client = new IOClient('browser', console, {
-      checktimeout: true,
-      checkIntervalMs: 50,
-  });
-  client.onMessage(Message.HelloReply, (message) => {
-      console.log(message);
-  });
-
-  async function main() {
-      const connected = await client.connectServer('ws://localhost:8080', reason => {
-          console.warn('连接断开：', reason);
-      });
-      if (!connected) throw new Error('连接失败');
-      client.send([Message.Hello, '浏览器']);
-      const [code, sum] = await client.asend([Message.Add, 3, 5], 3000);
-      if (code !== ErrorEnum.ErrorOk) throw new Error(`RPC 失败： ${code}`);
-      console.log('3 + 5 =', sum);
-  }
-
-  main().catch(console.error);
+  ...
 </script>
 ```
 
@@ -197,27 +176,7 @@ void main().catch(console.error);
 <script src="./lib/client/litesocket.global.js"></script>
 <script>
   const { IOClient, ErrorEnum } = LiteSocket;
-  const Message = { Hello: 960001, HelloReply: 960002, Add: 960003 };
-  const client = new IOClient('browser', console, {
-      checktimeout: true,
-      checkIntervalMs: 50,
-  });
-  client.onMessage(Message.HelloReply, (message) => {
-      console.log(message);
-  });
-
-  async function main() {
-      const connected = await client.connectServer('ws://localhost:8080', reason => {
-          console.warn('连接断开：', reason);
-      });
-      if (!connected) throw new Error('连接失败');
-      client.send([Message.Hello, '浏览器']);
-      const [code, sum] = await client.asend([Message.Add, 3, 5], 3000);
-      if (code !== ErrorEnum.ErrorOk) throw new Error(`RPC 失败： ${code}`);
-      console.log('3 + 5 =', sum);
-  }
-
-  main().catch(console.error);
+  ...
 </script>
 ```
 

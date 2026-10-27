@@ -4,6 +4,17 @@ import type { IOServerSocket } from '../../src/net/IOServerSocket';
 
 // 仅检查类型，不建立连接、不实际注册；通过 pnpm test:types 验证。
 function checkMessageHandlers(server: IOServer, client: IOClient) {
+    client.sendMsg(1);
+    client.sendMsg(1, 'hello', 42, { enabled: true }, ['nested']);
+    const packet: [number, ...any[]] = [1, 'hello'];
+    client.sendMsg(...packet);
+    // @ts-expect-error 必须提供数字消息 ID。
+    client.sendMsg();
+    // @ts-expect-error 第一个参数不能是字符串。
+    client.sendMsg('1', 'hello');
+    // @ts-expect-error sendMsg 接收展开参数，数组形式仍使用 send。
+    client.sendMsg([1, 'hello']);
+
     // 普通消息允许同步无返回值、提前 return，以及异步无返回值。
     server.onMessage(1, (socket: IOServerSocket, name: string) => { console.log(name); });
     server.onMessage(2, () => { return; });

@@ -110,7 +110,7 @@ enum Message {
 async function main(): Promise<void> {
     const server = new IOServer('server', console);
     server.onMessage(Message.Hello, (socket: IOServerSocket, name: string) => {
-        socket.emitMod(Message.HelloReply, `Hello, ${name}!`);
+        socket.send(Message.HelloReply, `Hello, ${name}!`);
     });
     server.onCallback(Message.Add, (_socket: IOServerSocket, a: number, b: number) => {
         return [ErrorEnum.ErrorOk, a + b];
@@ -151,7 +151,7 @@ async function main(): Promise<void> {
     });
     if (!connected) throw new Error('Connection failed');
     client.send([Message.Hello, 'browser']);
-    const [code, sum] = await client.asend([Message.Add, 3, 5], 3000);
+    const [code, sum] = await client.asendMsg(Message.Add, 3, 5);
     if (code !== ErrorEnum.ErrorOk) throw new Error(`RPC failed: ${code}`);
     console.log('3 + 5 =', sum);
 }
@@ -166,28 +166,7 @@ Without a bundler, serve the built ES module files from a static server:
 ```html
 <script type="module">
   import { IOClient, ErrorEnum } from './lib/client/index.js';
-
-  const Message = { Hello: 960001, HelloReply: 960002, Add: 960003 };
-  const client = new IOClient('browser', console, {
-      checktimeout: true,
-      checkIntervalMs: 50,
-  });
-  client.onMessage(Message.HelloReply, (message) => {
-      console.log(message);
-  });
-
-  async function main() {
-      const connected = await client.connectServer('ws://localhost:8080', reason => {
-          console.warn('Disconnected:', reason);
-      });
-      if (!connected) throw new Error('Connection failed');
-      client.send([Message.Hello, 'browser']);
-      const [code, sum] = await client.asend([Message.Add, 3, 5], 3000);
-      if (code !== ErrorEnum.ErrorOk) throw new Error(`RPC failed: ${code}`);
-      console.log('3 + 5 =', sum);
-  }
-
-  main().catch(console.error);
+  ...
 </script>
 ```
 
@@ -197,27 +176,7 @@ A classic script build is also available:
 <script src="./lib/client/litesocket.global.js"></script>
 <script>
   const { IOClient, ErrorEnum } = LiteSocket;
-  const Message = { Hello: 960001, HelloReply: 960002, Add: 960003 };
-  const client = new IOClient('browser', console, {
-      checktimeout: true,
-      checkIntervalMs: 50,
-  });
-  client.onMessage(Message.HelloReply, (message) => {
-      console.log(message);
-  });
-
-  async function main() {
-      const connected = await client.connectServer('ws://localhost:8080', reason => {
-          console.warn('Disconnected:', reason);
-      });
-      if (!connected) throw new Error('Connection failed');
-      client.send([Message.Hello, 'browser']);
-      const [code, sum] = await client.asend([Message.Add, 3, 5], 3000);
-      if (code !== ErrorEnum.ErrorOk) throw new Error(`RPC failed: ${code}`);
-      console.log('3 + 5 =', sum);
-  }
-
-  main().catch(console.error);
+  ...
 </script>
 ```
 

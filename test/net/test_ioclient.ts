@@ -28,6 +28,25 @@ async function setup(context: TestContext, checktimeout = false, opts: LiteClien
     return { client, server, url, disconnect, disconnects };
 }
 
+test('sendMsg forwards rest arguments like send while preserving spread input', async context => {
+    const { client, server, url, disconnect } = await setup(context);
+    const received: unknown[][] = [];
+    server.modHandle.register(messageId, (...args: unknown[]) => { received.push(args); },
+        null, SocketParamEnum.noSocket, 'sendMsg-test');
+    assert(await within(client.connectServer(url, disconnect), 'sendMsg connection'));
+    client.sendMsg(messageId);
+    client.sendMsg(messageId, 'hello', 7, { enabled: true }, [1, 2]);
+    client.send([messageId, 'legacy']);
+    const packet: [number, ...any[]] = [messageId, 'spread'];
+    client.sendMsg(...packet);
+    assert.deepStrictEqual(packet, [messageId, 'spread']);
+    await waitUntil(() => received.length === 4, 'sendMsg delivery');
+    // 普通消息沿用 send 的封包规则，末尾的 0 表示不等待 RPC 回调。
+    assert.deepStrictEqual(received, [
+        [0], ['hello', 7, { enabled: true }, [1, 2], 0], ['legacy', 0], ['spread', 0],
+    ]);
+});
+
 function holdRequests(server: IOServer) {
     let received = 0;
     server.cbHandle.register(messageId, () => {

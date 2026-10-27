@@ -103,6 +103,29 @@ test('browser-only declarations compile without @types/node or ws', () => {
     });
 });
 
+for (const platform of ['Node.js', 'browser']) {
+    test(`${platform} build exposes emitMod and exchanges mod messages in both directions`, async context => {
+        const { server, url, logger } = await listen(context);
+        const api = platform === 'browser' ? browser(context).api : full;
+        const client = new api.LiteClient('emit-mod', logger);
+        context.after(() => client.destroy());
+        assert.equal(client.emitMod(950003, 'not connected'), false);
+        assert.equal((await within(client.connectPromise(url), 'emitMod connection'))[0], true);
+        const received = new Promise(resolve => server.onMessage('mod', (peer, data) => resolve({ peer, data })));
+        assert.equal(client.emitMod(950003, 'payload'), true);
+        const incoming = await within(received, 'emitMod received by server');
+        assert.deepEqual(incoming.data, [950003, 'payload']);
+        assert.equal(incoming.peer, server.findById(client.getServerId()));
+        const reply = new Promise(resolve => client.on('mod', resolve));
+        assert.equal(incoming.peer.emitMod(950004, 'reply'), true);
+        assert.deepEqual(plain(await within(reply, 'emitMod reply')), [950004, 'reply']);
+        const closed = new Promise(resolve => client.onEvent('close', resolve));
+        client.close();
+        await within(closed, 'emitMod client close');
+        assert.equal(client.emitMod(950003, 'closed'), false);
+    });
+}
+
 test('browser client connects and receives text and binary JSON without Buffer', async context => {
     const { server, url, logger } = await listen(context);
     const { api, timers } = browser(context);
@@ -131,7 +154,12 @@ test('browser IOClient supports RPC and timeout polling with numeric timer IDs',
     context.after(() => finish([full.ErrorEnum.ErrorOk]));
     server.onCallback(950001, (_peer, a, b) => [full.ErrorEnum.ErrorOk, a + b]);
     server.onCallback(950002, () => pendingReply);
+    const messages = [];
+    server.onMessage(950003, (_peer, text, count) => { messages.push([text, count]); });
     assert(await within(client.connectServer(url, () => {}), 'browser RPC connection'));
+    client.sendMsg(950003, 'browser sendMsg', 7);
+    await waitUntil(() => messages.length === 1, 'browser sendMsg');
+    assert.deepEqual(messages, [['browser sendMsg', 7]]);
     assert.deepEqual(plain(await within(client.asend([950001, 3, 5], 1000), 'browser RPC')), [api.ErrorEnum.ErrorOk, 8]);
     assert.deepEqual(plain(await within(client.asend([950002], 20), 'browser timeout')), [api.ErrorEnum.Callback_timeout]);
     client.destroy('test finished');

@@ -16,6 +16,7 @@
     "example:lib:build": "node scripts/build-lib-examples.cjs",
     "example:lib": "pnpm example:lib:build && node .example-build/example/lib/example_lib_full.js",
     "build": "node scripts/build.cjs",
+    "prepack": "pnpm build",
     "build:full": "node scripts/build.cjs full",
     "build:client": "node scripts/build.cjs client",
     "test:lib": "pnpm build && node --test test/build/*.cjs"

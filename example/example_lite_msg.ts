@@ -31,7 +31,7 @@ async function example() {
     // 普通消息：服务端收到 helloMessage，使用另一个消息 ID 返回结果。
     server.onMessage(myMsg.s2c_helloMessage, (socket: IOServerSocket, name: string) => {
         console.log('服务端收到普通消息：', name);
-        socket.emitMod(myMsg.c2s_helloReplyMessage, `你好，${name}！`);
+        socket.send(myMsg.c2s_helloReplyMessage, `你好，${name}！`);
     });
 
     const helloReply = new Promise<void>(resolve => {
@@ -66,11 +66,11 @@ async function example() {
 
         server.io.observe(client.socket.getServerId(), console);
 
-        client.send([myMsg.s2c_helloMessage, 'Lite']);
+        client.sendMsg(myMsg.s2c_helloMessage, 'Lite');
         await helloReply;
 
         // asend 不需要注册返回消息，直接 await 获取服务端返回的结果。
-        const [code, sum] = await client.asend([myMsg.rpc_addMessage, 3, 5], 3000);
+        const [code, sum] = await client.asendMsg(myMsg.rpc_addMessage, 3, 5);
         if (code !== ErrorEnum.ErrorOk || sum !== 8) throw new Error(`RPC 失败：${code}`);
         console.log('客户端 await asend addMessage 得到结果：', sum);
 
