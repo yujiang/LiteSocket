@@ -150,8 +150,8 @@ async function main(): Promise<void> {
         console.warn('连接断开：', reason);
     });
     if (!connected) throw new Error('连接失败');
-    client.send([Message.Hello, '浏览器']);
-    const [code, sum] = await client.asend([Message.Add, 3, 5], 3000);
+    client.sendMsg(Message.Hello, '浏览器');
+    const [code, sum] = await client.asendNsg(Message.Add, 3, 5);
     if (code !== ErrorEnum.ErrorOk) throw new Error(`RPC 失败： ${code}`);
     console.log('3 + 5 =', sum);
 }

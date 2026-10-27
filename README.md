@@ -150,7 +150,7 @@ async function main(): Promise<void> {
         console.warn('Disconnected:', reason);
     });
     if (!connected) throw new Error('Connection failed');
-    client.send([Message.Hello, 'browser']);
+    client.sendMsg(Message.Hello, 'browser');
     const [code, sum] = await client.asendMsg(Message.Add, 3, 5);
     if (code !== ErrorEnum.ErrorOk) throw new Error(`RPC failed: ${code}`);
     console.log('3 + 5 =', sum);
