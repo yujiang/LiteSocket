@@ -51,6 +51,11 @@
     "./client/global": "./lib/client/litesocket.global.js"
   },
   "files": [
-    "lib"
-  ]
+    "lib",
+    "readme_cn.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yujiang/LiteSocket.git"
+  }
 }

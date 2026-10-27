@@ -13,6 +13,7 @@ import {
 	SocketCloseCode,
 } from './LiteNet';
 import { LiteLogger } from "../public/log";
+import { NetEventEnum } from './msgid';
 
 export type SocketReason = string | number;
 
@@ -174,10 +175,15 @@ export abstract class LiteSocket {
 		return logHeadEx(this.constructor.name, this.name, func, logtype);
 	}
 
-	emit(event: string, data?: any): void {
+	emitMod(...args: any[]) : boolean {
+		// console.log(args);
+		return this.emit(NetEventEnum.eventMod, args);
+	}
+
+	emit(event: string, data?: any): boolean {
 		if (!this.isConnected()) {
 			this.logger.warn(this.logHead('emit', 'warn'), 'not open', event, data);
-			return;
+			return false;
 		}
 		let msg: string;
 		try {
@@ -185,20 +191,22 @@ export abstract class LiteSocket {
 		} catch (err) {
 			this.logger.error(this.logHead('emit', 'error'), 'error:', err instanceof Error ? err.message : String(err));
 			this.emitEvent('exception', msgJsonStringError, { eventName: event, data, error: err });
-			return;
+			return false;
 		}
 		const maxSendLen = this.getMaxSendLen();
 		if (msg.length >= maxSendLen) {
 			this.logger.error(this.logHead('emit', 'error'), msgSendMax, msg.length, '>=', maxSendLen);
 			this.emitEvent('exception', msgSendMax, { eventName: event, data });
-			return;
+			return false;
 		}
 		try {
 			this.ws.send(msg);
 		} catch (err) {
 			this.logger.error(this.logHead('emit', 'error'), 'error:', err instanceof Error ? err.message : String(err));
 			this.emitEvent('exception', msgSendError, { eventName: event, data, error: err });
+			return false;
 		}
+		return true;
 	}
 
 	prevHandle(parsed: SocketMsgType) {

@@ -83,6 +83,7 @@ export class LiteServerClient extends LiteSocket implements CommonSocket{
 		return true;
 	}
 
+	//不是消息是事件
 	emitEvent(eventName: clientEvent, reason?: string | number, err?: any){
 		this.server.emitClient(eventName, this, reason, err);
 	}

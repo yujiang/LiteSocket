@@ -3,7 +3,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { IOClient } from '../src/net/IOClient';
 import { IOServer } from '../src/net/IOServer';
 import type { IOServerSocket } from '../src/net/IOServerSocket';
-import { NetEventEnum, setMsgNameFunc } from '../src/net/msgid';
+import { setMsgNameFunc } from '../src/net/msgid';
 import { ErrorEnum } from '../src/net/ErrorEnum';
 import { createHeadLogger, createSliceLogger } from '../src/public/log';
 
@@ -31,7 +31,7 @@ async function example() {
     // 普通消息：服务端收到 helloMessage，使用另一个消息 ID 返回结果。
     server.onMessage(myMsg.s2c_helloMessage, (socket: IOServerSocket, name: string) => {
         console.log('服务端收到普通消息：', name);
-        socket.emit(NetEventEnum.eventMod, [myMsg.c2s_helloReplyMessage, `你好，${name}！`]);
+        socket.emitMod(myMsg.c2s_helloReplyMessage, `你好，${name}！`);
     });
 
     const helloReply = new Promise<void>(resolve => {
