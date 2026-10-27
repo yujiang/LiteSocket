@@ -1,0 +1,38 @@
+import type { IOClient } from '../../src/net/IOClient';
+import type { IOServer } from '../../src/net/IOServer';
+import type { IOServerSocket } from '../../src/net/IOServerSocket';
+
+// 仅检查类型，不建立连接、不实际注册；通过 pnpm test:types 验证。
+function checkMessageHandlers(server: IOServer, client: IOClient) {
+    // 普通消息允许同步无返回值、提前 return，以及异步无返回值。
+    server.onMessage(1, (socket: IOServerSocket, name: string) => { console.log(name); });
+    server.onMessage(2, () => { return; });
+    server.onMessage(3, async () => { await Promise.resolve(); });
+    client.onMessage(1, (name: string) => { console.log(name); });
+    client.onMessage(2, async () => { await Promise.resolve(); });
+
+    // 有返回值的函数应注册到 onCallback，而不是 onMessage。
+    // @ts-expect-error 普通消息处理函数不能返回数字。
+    server.onMessage(4, () => 1);
+    // @ts-expect-error 普通消息处理函数不能返回数组。
+    server.onMessage(5, () => [0, 'result']);
+    // @ts-expect-error 异步处理函数也不能返回业务结果。
+    server.onMessage(6, async () => 1);
+    // @ts-expect-error 客户端普通消息同样不能返回字符串。
+    client.onMessage(3, () => 'result');
+    // @ts-expect-error 客户端异步普通消息同样不能返回结果。
+    client.onMessage(4, async () => [0, 'result']);
+
+    // 已声明的函数也检查返回类型，不局限于直接传入的箭头函数。
+    const withResult = (name: string) => name.length;
+    const withoutResult = (name: string): void => { console.log(name); };
+    client.onMessage(5, withoutResult);
+    // @ts-expect-error 已声明的函数返回数字，也应拒绝。
+    client.onMessage(6, withResult);
+
+    // 只有部分分支返回结果，同样属于有返回值的处理函数。
+    // @ts-expect-error 不能用提前 return 以外的方式返回业务结果。
+    server.onMessage(7, (socket: IOServerSocket, enabled: boolean) => {
+        if (enabled) return 1;
+    });
+}

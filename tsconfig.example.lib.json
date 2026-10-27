@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.example.json",
+  "compilerOptions": {
+    "module": "Node16",
+    "moduleResolution": "Node16"
+  },
+  "include": ["example/lib/example_lib_full.ts"],
+  "exclude": ["node_modules", "lib", ".example-build"]
+}

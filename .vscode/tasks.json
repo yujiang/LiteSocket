@@ -1,0 +1,48 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build examples",
+      "type": "process",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/node_modules/typescript/bin/tsc",
+        "-p",
+        "tsconfig.example.json"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$tsc",
+      "group": "build"
+    },
+    {
+      "label": "build tests",
+      "type": "process",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/node_modules/typescript/bin/tsc",
+        "-p",
+        "tsconfig.test.json"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$tsc",
+      "group": "build"
+    },
+    {
+      "label": "build lib examples",
+      "type": "process",
+      "command": "node",
+      "args": [
+        "${workspaceFolder}/scripts/build-lib-examples.cjs"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": "$tsc",
+      "group": "build"
+    }
+  ]
+}

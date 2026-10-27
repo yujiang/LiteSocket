@@ -1,0 +1,6 @@
+node_modules/
+.pnpm-store/
+.test-build/
+.example-build/
+lib/
+bin-debug/

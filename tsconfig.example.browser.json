@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "target": "ES2021",
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "lib": ["ES2021", "DOM"],
+    "types": [],
+    "strict": true,
+    "noEmit": true
+  },
+  "files": ["example/lib/example_lib_brower.ts"]
+}

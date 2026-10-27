@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2021", "DOM"],
+    "types": [],
+    "baseUrl": ".",
+    "paths": {
+      "ws": ["src/browser/ws.ts"],
+      "node:timers/promises": ["src/browser/timers.ts"],
+      "node:assert": ["src/browser/assert.ts"],
+      "assert": ["src/browser/assert.ts"],
+      "chalk": ["src/browser/chalk.ts"]
+    },
+    "module": "ESNext",
+    "noEmit": true
+  },
+  "include": ["src/client.ts", "src/browser/**/*.ts"],
+  "exclude": ["node_modules", "lib"]
+}

@@ -1,0 +1,36 @@
+{
+	"compilerOptions": {
+        //"useDefineForClassFields": false,	
+        "allowJs": false,
+        //https://www.typescriptlang.org/tsconfig#esModuleInterop
+
+        // 因为用到 import * as MD5 from 'md5'; 不能开启下面的。
+        // "esModuleInterop": true,  // 让 default 导出更易用
+        // "moduleResolution": "node",   // 确保能解析 node_modules
+        "strictNullChecks": false,
+
+        "allowSyntheticDefaultImports": true,
+        "experimentalDecorators": true,
+        "forceConsistentCasingInFileNames": true,
+        "ignoreDeprecations": "5.0",
+        "importHelpers": true,
+        //"importsNotUsedAsValues": "error",
+        "lib": ["es2021"],
+        "module": "commonjs",
+        "noFallthroughCasesInSwitch": true,
+        "noImplicitOverride": true,
+        "noImplicitThis": true,
+        //"noUnusedLocals":true,
+        "moduleResolution": "node",
+        "outDir": "bin-debug",
+        //"esModuleInterop": true,
+        "skipLibCheck": true,
+        //"verbatimModuleSyntax":true,
+        "sourceMap": true,
+        "target": "ES2021"
+    },
+	"$schema": "https://json.schemastore.org/tsconfig",
+	"display": "Recommended",
+	"include": ["src"],
+	"exclude": ["src/browser", "lib", "node_modules"]
+}
