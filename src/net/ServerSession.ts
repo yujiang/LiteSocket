@@ -1,13 +1,21 @@
 import { msgData } from '../public/Depends';
 import { LiteLogger } from "../public/log";
 import { SessionCallback } from './SessionCallback';
-import { W10, type HttpSocket } from './msg';
+import { SocketEmit, W10 } from './msg';
+
+export interface ServerSessionSocket extends SocketEmit {
+	connected?: boolean;
+	session?: SessionCallback; // 调试直连使用
+	logger?: LiteLogger;
+	on(event: string | symbol, listener: (...args: any[]) => void): this;
+}
+
 
 // 只在IOServerSocket.createSocketCB创建
 export class ServerSession extends SessionCallback {
-	sock: HttpSocket;
+	sock: ServerSessionSocket;
 
-	constructor(name: string, logger:LiteLogger, sock: HttpSocket) {
+	constructor(name: string, logger:LiteLogger, sock: ServerSessionSocket) {
 		// 对于服务器向客户端的发送, 一般通过sesssion不走socket底层,所以没有传入onTimeoutFunc
 		super(name, logger, null);
 		this.sock = sock;

@@ -7,7 +7,6 @@ typehandle包括一系列的msghandle,msghandle是针对消息的handle
 import { strict as assert } from 'assert';
 import { CostGuard, CostGuards } from '../public/profile';
 import { getMsgName, NetEventEnum } from './msgid';
-import type { SessionCallback } from './SessionCallback';
 import type { LiteLogger } from "../public/log";
 import type { EventCallbackFunc, EventMods } from '../public/Depends';
 import { msgData, SimpleObj, Utils } from '../public/Depends';
@@ -21,28 +20,13 @@ export enum SocketParamEnum {
 	selfSocket, // 用self替代socket
 }
 
-export interface HttpSocketHandle {
-	//$socketClientId?: number;
+export interface SocketEmit {
 	emit(event: string, args: msgData): void;
 }
 
 export const W10 = 100000; //十万
 
-// HttpSocket extends sio.Socket
-export interface HttpSocket extends HttpSocketHandle {
-	connected?: boolean;
-
-	session?: SessionCallback; // 调试直连使用
-
-	logger?: LiteLogger; 
-
-	// 调试好用, 每个单独链接可以设定log, 比如把某个玩家发送的消息都记录下来!
-	observeLogger?: LiteLogger; 
-
-	on(event: string | symbol, listener: (...args: any[]) => void): this;
-}
-
-export type MsgFilterFunc = (socket: HttpSocketHandle, msgid: number, data: any[]) => any[];
+export type MsgFilterFunc = (socket: SocketEmit, msgid: number, data: any[]) => any[];
 
 // 对handle的参数装箱
 export class MsgGuard extends CostGuard {
@@ -97,7 +81,7 @@ export class MsgGuard extends CostGuard {
 		this.close = close;
 	}
 
-	trySocket(socket: HttpSocketHandle, msgid: number, data: any[]): unknown {
+	trySocket(socket: SocketEmit, msgid: number, data: any[]): unknown {
 		if (this.close) {
 			return ErrorEnum.Msg_closed;
 		}
@@ -177,7 +161,7 @@ export class MsgGuards extends CostGuards {
 
 export function getPlayerIdObj(obj: unknown) {
 	if (obj == null) return 0;
-	return typeof obj === 'object' ? obj['id'] || 0 : 0;
+	return typeof obj === 'object' ? (obj as any).id || 0 : 0;
 }
 
 // raw func 在data[0]
@@ -240,7 +224,7 @@ export class MsgHandle {
 
 	recvSockect = 0;
 
-	handleMsg(socket: HttpSocketHandle, data: msgData, warning = true): boolean | Promise<boolean> {
+	handleMsg(socket: SocketEmit, data: msgData, warning = true): boolean | Promise<boolean> {
 		this.recvSockect++;
 		if (this.recvSockect % W10 === 0) {
 			this.logger.warn(`${this.name} recv ${this.recvSockect}`);
@@ -270,7 +254,7 @@ export class MsgHandle {
 	// 仅仅是编辑器使用，不通过session，但是有返回值作为asend的返回！
 	// 最好还是改造的一模一样较好！
 	handleMsgRt(
-		socket: HttpSocketHandle,
+		socket: SocketEmit,
 		data: msgData,
 		rt: SimpleObj,
 		warning = true,
@@ -294,13 +278,13 @@ export async function logPromise(rt: any) {
 }
 
 export class MsgHandleCB extends MsgHandle {
-	override handleMsg(socket: HttpSocketHandle, data: msgData, warning = true): Promise<boolean> {
+	override handleMsg(socket: SocketEmit, data: msgData, warning = true): Promise<boolean> {
 		return this.handleCallback(socket, data, null, warning);
 	}
 
 	// 为了editor做的, 因为没法把返回值emit回去了!
 	override handleMsgRt(
-		socket: HttpSocketHandle,
+		socket: SocketEmit,
 		data: msgData,
 		rt: SimpleObj,
 		warning = true,
@@ -312,7 +296,7 @@ export class MsgHandleCB extends MsgHandle {
 
 	// see HttpClient.send
 	async handleCallback(
-		socket: HttpSocketHandle,
+		socket: SocketEmit,
 		data: msgData,
 		returndata: SimpleObj = null,
 		warning = true,

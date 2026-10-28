@@ -10,7 +10,7 @@ import type { SocketReason } from "./LiteSocket";
 import { MsgHandle, MsgHandleCB, SocketParamEnum } from "./msg";
 import { TypeHandle } from "./TypeHandle";
 import { settleSendFailure } from "./LiteUtils";
-import { ErrorEnum, EventReturn, EventRtFunc, EventVoidFunc, FirstErrorRt } from "./ErrorEnum";
+import { ErrorEnum, EventRtFunc, EventVoidFunc, FirstErrorRt } from "./ErrorEnum";
 import { msgData } from "../public/Depends";
 
 export class IOClient {

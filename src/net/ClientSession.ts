@@ -21,7 +21,7 @@ export interface ClientParam {
 
 export type onCircleFunc = (mod: string, msg: msgData) => void;
 
-export interface NetCallbackSocket {
+export interface ClientSessionSocket {
 	connected?: boolean;
 	emit(event: string, args: msgData): void;
 }
@@ -46,13 +46,13 @@ export class ClientSession extends SessionCallback {
 	// 	this.funcCircle = func;
 	// }
 
-	socket: NetCallbackSocket;
+	socket: ClientSessionSocket;
 
 	override isSessionConnect(): boolean {
 		return this.socket?.connected;
 	}
 
-	resetSocket(socket: NetCallbackSocket): void {
+	resetSocket(socket: ClientSessionSocket): void {
 		this.reset(ErrorEnum.Callback_bindsocket, false);
 		this.socket = socket;
 	}

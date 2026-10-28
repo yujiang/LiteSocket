@@ -1,9 +1,9 @@
 import type { LiteLogger } from "../public/log";
 import { NetEventEnum } from './msgid';
-import { MsgHandle, MsgHandleCB, HttpSocketHandle } from './msg';
+import { MsgHandle, MsgHandleCB, SocketEmit } from './msg';
 import type { msgData } from '../public/Depends';
 
-export interface HttpSocketOn extends HttpSocketHandle {
+export interface SocketOn extends SocketEmit {
 	//$socketClientId?: number;
 	//emit(event: string, args: msgData): void;
 	on(event: string | symbol, listener: (...args: any[]) => void): this;
@@ -27,7 +27,7 @@ export class TypeHandle {
 		}
 	}
 
-	bindSocket(socket: HttpSocketOn): void {
+	bindSocket(socket: SocketOn): void {
 		const msgs = [NetEventEnum.eventMod, NetEventEnum.eventCallback, NetEventEnum.eventBc];
 		for (const msg of msgs) {
 			const h = this.getMsghandle(msg);
@@ -36,7 +36,7 @@ export class TypeHandle {
 		}
 	}
 
-	handleTypeMsg(socket: HttpSocketOn, stype: string, data: msgData, warning = true): boolean {
+	handleTypeMsg(socket: SocketOn, stype: string, data: msgData, warning = true): boolean {
 		const h = this.handles[stype];
 		if (!h) {
 			if (warning){

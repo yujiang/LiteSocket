@@ -22,7 +22,7 @@
         "noImplicitOverride": true,
         "noImplicitThis": true,
         //"noUnusedLocals":true,
-        "moduleResolution": "node",
+        //"moduleResolution": "node",
         "outDir": "bin-debug",
         //"esModuleInterop": true,
         "skipLibCheck": true,

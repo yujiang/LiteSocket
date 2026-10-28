@@ -2,7 +2,7 @@ import type { WebSocket } from 'ws';
 import { LiteServerClient } from './LiteServerClient';
 import { LiteServer } from './LiteServer';
 import type { LiteLogger } from "../public/log";
-import type { HttpSocket } from './msg';
+import type { ServerSessionSocket } from './ServerSession';
 import { ServerSession } from './ServerSession';
 import { NetEventEnum } from './msgid';
 import type { clientEvent } from './LiteServer';
@@ -13,7 +13,7 @@ import { ErrorEnum, FirstErrorRt } from './ErrorEnum';
 
 // 主要是为了添加callback
 
-export class IOServerSocket extends LiteServerClient implements HttpSocket {
+export class IOServerSocket extends LiteServerClient implements ServerSessionSocket {
     //$socketClientId: number;
     session: ServerSession;
 
