@@ -24,9 +24,7 @@ export class GameServer{
         // 无所谓, 会自动重连的~
     }
 
-    onGateDisconnect(id: number, playerid: number){
-        this.exitGame(playerid);
-    }
+    // onGateDisconnect(id: number, playerid: number){this.exitGame(playerid);}
 
     //一下都是临时数据
     Players:Record<number,Player> = {}
@@ -56,9 +54,11 @@ export class GameServer{
         return true;
     }
 
-    exitGame(playerid: number){
+    // why = kickoff ...
+    exitGame(playerid: number, why: string){
         let p = this.findPlayer(playerid);
         if(!p) return false;
+        this.gate.sendMsg(MsgGameGateEnum.game2gate_exit, p.clientid, why);
         delete this.Players[playerid];
         delete this.Clients[p.clientid];
         return true;
@@ -92,9 +92,11 @@ export class GameServer{
             }
         )
 
-        this.gate.onMessage(MsgGameGateEnum.gate2game_clientdisconnect,
+        this.gate.onMessage(MsgGameGateEnum.gate2game_disconnect,
             (clientid: number) => {
-                this.exitClient(clientid);
+                if (this.exitClient(clientid)){
+                    this.gate.sendMsg(MsgGameGateEnum.game2gate_exit, clientid, 'disconnect');
+                }
             }
         )
     }

@@ -43,6 +43,8 @@ export class GameClient extends IOClient{
             this.logined = false;
             this.gameid = 0;
             this.playerid = 0;
+            
+            this.socket.disconnect();
         }
         return rt;
     }

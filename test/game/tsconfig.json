@@ -1,4 +1,4 @@
 {
   "extends": "../../tsconfig.test.json",
-  "include": ["test_gate.ts"]
+  "include": ["test_gate.ts", "test_gate_allmsg.ts"]
 }

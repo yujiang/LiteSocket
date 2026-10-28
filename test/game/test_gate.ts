@@ -97,16 +97,18 @@ test('exit confirms player cleanup before another client sends a chat', async co
     assert.deepStrictEqual(await within(c2.exit(), 'exit'), [ErrorEnum.ErrorOk]);
     assert.equal(game.findPlayer(player2), undefined);
     assert.equal(game.findClient(clientid), undefined);
-    assert.deepStrictEqual(gate.clients.findById(clientid).customData,
-        { logined: false, gameid: 0, playerid: 0 });
+    await waitUntil(() => !gate.clients.findById(clientid), 'client disconnect after exit');
     assert.equal(c2.logined, false);
     assert.equal(c2.gameid, 0);
     assert.equal(c2.playerid, 0);
     assert.deepStrictEqual(await within(c1.chat(player2, 'after exit'), 'chat after exit'),
         [ErrorEnum.ErrorError, 'des not in game']);
-    assert.deepStrictEqual(await within(c2.exit(), 'repeat exit'), [ErrorEnum.ErrorOk]);
-    assert.deepStrictEqual(await within(c2.login(), 'login again'), [ErrorEnum.ErrorOk]);
-    assert.deepStrictEqual(await within(c2.enterGame(game.id, player2), 'enter again'), [ErrorEnum.ErrorOk]);
+    const replacement = new GameClient('replacement-client', c2.logger, { checktimeout: true });
+    context.after(() => replacement.destroy('test cleanup'));
+    assert(await within(replacement.connectServer(`ws://127.0.0.1:${gate.clients.io.port}`, () => {}),
+        'replacement client connect'));
+    assert.deepStrictEqual(await within(replacement.login(), 'login again'), [ErrorEnum.ErrorOk]);
+    assert.deepStrictEqual(await within(replacement.enterGame(game.id, player2), 'enter again'), [ErrorEnum.ErrorOk]);
 });
 
 test('client disconnect notifies game and releases both player indexes', async context => {

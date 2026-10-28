@@ -5,7 +5,7 @@ import { IOServer } from "../net/IOServer";
 import { IOServerSocket } from "../net/IOServerSocket";
 import { GateClients } from "./GateClients";
 
-export interface GameCustomData  {
+export interface GameData  {
 	gameid: number;
 }
 
@@ -51,7 +51,7 @@ export class GateGames extends IOServer {
     findGame(gameid: number) : IOServerSocket {
         const clients = this.io.clients;
         for (const client of clients.values()) {
-            const custom :GameCustomData = client.customData
+            const custom :GameData = client.customData
             if (custom.gameid == gameid) {
                 return client as IOServerSocket;
             }

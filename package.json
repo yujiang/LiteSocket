@@ -11,7 +11,7 @@
     "test": "pnpm test:build && node --test --test-concurrency=1 .test-build/test/*/test_*.js",
     "test:build": "node -e \"require('node:fs').rmSync('.test-build', { recursive: true, force: true })\" && tsc -p tsconfig.test.json",
     "test:types": "tsc -p tsconfig.test.json --noEmit",
-    "test:game": "tsc -p test/game/tsconfig.json && node --test .test-build/test/game/test_gate.js",
+    "test:game": "tsc -p test/game/tsconfig.json && node --test .test-build/test/game/test_gate.js .test-build/test/game/test_gate_allmsg.js",
     "example:build": "tsc -p tsconfig.example.json",
     "example": "pnpm example:build && node .example-build/example/example_lite_msg.js",
     "example:lib:build": "node scripts/build-lib-examples.cjs",

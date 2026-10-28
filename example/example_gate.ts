@@ -1,4 +1,6 @@
+import { strict as assert } from "node:assert";
 import { createSliceLogger } from "../src/public/log";
+import { setTimeout as delay } from 'node:timers/promises';
 
 import {GameServer} from "../src/game/GameServer"
 import {GateServer} from "../src/game/GateServer"
@@ -25,11 +27,11 @@ async function run(){
     if (!rt2) throw new Error('game.start failed');
 
     const connected1 = await c1.connectServer(`ws://127.0.0.1:${clientport}`, (reason, err) => {
-        console.error('客户端断线：', reason, err);
+        console.error('c1客户端断线：', reason);
     });
     if (!connected1) throw new Error('客户端1连接失败');
     const connected2 = await c2.connectServer(`ws://127.0.0.1:${clientport}`, (reason, err) => {
-        console.error('客户端断线：', reason, err);
+        console.error('c2客户端断线：', reason);
     });
     if (!connected2) throw new Error('客户端1连接失败');
 
@@ -41,8 +43,11 @@ async function run(){
     await c2.enterGame(game.id, player2);
     const r1 = await c1.chat(c2.playerid, 'hello world');
     await c2.exit();
+    assert (c2.playerid == 0);
     //const r2 = await c2.chat(c1.playerid, 'good job!');
     await c1.chat(player2, 'good job!');
+    game.exitGame(player1, "test");
+    await delay(1000);
     process.exit(0);
 }
 

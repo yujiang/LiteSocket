@@ -1,7 +1,7 @@
 import { strict as assert } from "node:assert";
 import { ErrorEnum, LiteLogger, LiteOptionsInput, NetEventEnum } from "../client";
-import { GateClients, GateCustomData } from "./GateClients";
-import { GameCustomData, GateGames } from "./GateGames";
+import { GateClients, ClientData } from "./GateClients";
+import { GameData, GateGames } from "./GateGames";
 import { IOServerSocket } from "../net/IOServerSocket";
 import { ListenResult } from "../net/LiteServer";
 import { MsgGameGateEnum, MsgClientEnum } from "./MsgGame";
@@ -54,16 +54,29 @@ export class GateServer {
 
     // 装配消息
     fillMessages(){
+        this.games.onMessage(MsgGameGateEnum.game2gate_exit,
+            (socket:IOServerSocket, clientid: number, why: string) => {
+                // const custom: GameCustomData = socket.customData;                
+                const client = this.clients.findById(clientid);
+                if (client){
+                    const custom: ClientData = client.customData;
+                    custom.exit(why);
+                    if (why !== 'disconnect'){ // 不是自己因为disconnect发过去的
+                        client.disconnect();
+                    }
+                }
+            }
+        );
         this.games.onCallback(MsgGameGateEnum.game2gate_info, 
             (socket:IOServerSocket, gameid:number) => {
-                const custom: GameCustomData = socket.customData;                
+                const custom: GameData = socket.customData;                
                 custom.gameid = gameid;
                 return [ErrorEnum.ErrorOk];
             }
         )
         this.clients.onCallback(MsgClientEnum.gate_login, 
             (socket:IOServerSocket) => {
-                const custom: GateCustomData = socket.customData;                
+                const custom: ClientData = socket.customData;                
                 if (custom.logined) {
                     return [ErrorEnum.ErrorError, "logined"]
                 }
@@ -73,7 +86,7 @@ export class GateServer {
         )
        this.clients.onCallback(MsgClientEnum.gate_entergame, 
             async (socket:IOServerSocket, gameid: number, playerid: number) => {
-                const custom: GateCustomData = socket.customData;                
+                const custom: ClientData = socket.customData;                
                 if (!custom.logined) {
                     return [ErrorEnum.ErrorError, "not login"]
                 }
@@ -96,7 +109,7 @@ export class GateServer {
                 }
                 // 进入游戏期间可能断线，此时断线回调还不知道玩家已进入游戏。
                 if (!socket.connected) {
-                    game.sendMsg(MsgGameGateEnum.gate2game_clientdisconnect, socket.id);
+                    game.sendMsg(MsgGameGateEnum.gate2game_disconnect, socket.id);
                     return [ErrorEnum.Callback_disconnect];
                 }
                 custom.gameid = gameid;
@@ -108,7 +121,7 @@ export class GateServer {
 
         this.clients.onCallback(MsgClientEnum.gate_exit, 
             async (socket:IOServerSocket) => {
-                const custom: GateCustomData = socket.customData;                
+                const custom: ClientData = socket.customData;                
                 if (!custom.logined) {
                     return [ErrorEnum.ErrorOk];
                 }
@@ -132,9 +145,8 @@ export class GateServer {
                     return rt;
                 }
                 console.log("[gate] exit game", custom.gameid, socket.id, custom.playerid);
-                custom.logined = false;
-                custom.gameid = 0;
-                custom.playerid = 0;
+                custom.exit("gate_exit");
+                // socket.disconnect(); 不行，否则消息无法收到了
                 return [ErrorEnum.ErrorOk];
             }
         )

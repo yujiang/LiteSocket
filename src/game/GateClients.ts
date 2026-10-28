@@ -7,10 +7,16 @@ import { insertAt } from "../public/arrayUtils";
 import { GateGames } from "./GateGames";
 import { MsgGameGateEnum } from "./MsgGame";
 
-export interface GateCustomData  {
-	logined: boolean;
-	gameid: number;
-	playerid: number;
+export class ClientData {
+	logined = false;
+	gameid = 0;
+	playerid = 0;
+    exit(reason: string) {
+        console.log("ClientData.exit", this.gameid, this.playerid, reason)
+        this.logined = false;
+        this.gameid = 0;
+	    this.playerid = 0;
+    }
 }
 
 // 一个Gate连接多个Client
@@ -23,21 +29,17 @@ export class GateClients extends IOServer {
         // super.onClientConnected(socket); 
 		socket.createSession(this.name);
 
-		socket.customData = {
-			gameid: 0,
-			playerid: 0,
-			logined: false,
-		}
+		socket.customData = new ClientData();
         this.bindRoute(socket);
     }
 
 	override onClientDisconnected(socket: IOServerSocket): void {
 		super.onClientDisconnected(socket); 
 
-		const custom: GateCustomData = socket.customData as any;
+		const custom: ClientData = socket.customData as any;
 		if (custom.gameid && custom.playerid) {
 			const game = this.route.findGame(custom.gameid);
-			game?.sendMsg(MsgGameGateEnum.gate2game_clientdisconnect, socket.id);
+			game?.sendMsg(MsgGameGateEnum.gate2game_disconnect, socket.id);
 		}
 	}
     
@@ -68,7 +70,7 @@ export class GateClients extends IOServer {
 		if (!socket) return;
 		
 		// gameid 是业务编号，需要先找到对应的游戏服连接。
-		const custom: GateCustomData = socket.customData as any;
+		const custom: ClientData = socket.customData as any;
 		const game = custom?.gameid ? this.route.findGame(custom.gameid) : undefined;
 		if (!game) {
 			if (isCallbackMod(stype)) {
