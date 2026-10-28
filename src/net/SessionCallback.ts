@@ -7,6 +7,7 @@ import { CallbackFirstError, ErrorEnum, FirstErrorRt } from './ErrorEnum';
 export type CallbackData = [string, msgData, CallbackFirstError, number, number];
 export type onTimeoutFunc = (msgid: number, data: CallbackData, timeout: number) => void;
 
+// 作为LiteServerClient的callback回调
 export abstract class SessionCallback {
 	name: string;
 	logger: LiteLogger;
@@ -91,7 +92,7 @@ export abstract class SessionCallback {
 		} else {
 			msg.push(0);
 		}
-		this.sendMsg(mod, msg);
+		this.emitMsg(mod, msg);
 	}
 
 	onSessionCallback(id: number, rt: FirstErrorRt): void {
@@ -109,7 +110,7 @@ export abstract class SessionCallback {
 
 	abstract isSessionConnect(): boolean;
 
-	abstract sendMsg(mod: string, msg: msgData): void;
+	abstract emitMsg(mod: string, msg: msgData): void;
 
 	// 服务器的player重连时重发所有的session!, 不要做,容易引发额外错误.
 	// onReconnect(): void {

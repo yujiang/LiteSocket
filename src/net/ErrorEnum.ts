@@ -36,4 +36,5 @@ export function getErrorEnumString(error: ErrorEnum): string {
 }
 
 export type EventVoidFunc = (...args: any[]) => void;
-export type EventRtFunc = (...args: any[]) => ErrorEnum|FirstErrorRt|Promise<FirstErrorRt | ErrorEnum>;
+export type EventReturn = ErrorEnum|FirstErrorRt|Promise<FirstErrorRt | ErrorEnum>;
+export type EventRtFunc = (...args: any[]) => EventReturn;

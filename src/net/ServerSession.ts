@@ -6,7 +6,7 @@ import { W10, type HttpSocket } from './msg';
 import { NetEventEnum } from './msgid';
 
 // 只在IOServerSocket.createSocketCB创建
-export class SockWrap extends SessionCallback {
+export class ServerSession extends SessionCallback {
 	sock: HttpSocket;
 
 	constructor(name: string, logger:LiteLogger, sock: HttpSocket) {
@@ -21,7 +21,7 @@ export class SockWrap extends SessionCallback {
 		return this.sock?.connected;
 	}
 
-	override sendMsg(mod: string, msg: msgData): void {
+	override emitMsg(mod: string, msg: msgData): void {
 		this.sendNum++;
 		if (this.sendNum % W10 === 0 && this.sock.logger) {
 			this.sock.logger.warn(`${this.name} SockWrap send ${this.sendNum}`);
@@ -30,13 +30,13 @@ export class SockWrap extends SessionCallback {
 	}
 }
 
-export async function asendSock(
-	sock: HttpSocket,
-	data: msgData,
-	timeout = 0,
-) {
-	if (sock.cb) {
-		return sock.cb.asendSession(NetEventEnum.eventCallback, data, timeout);
-	}
-	return [ErrorEnum.Callback_not_find, null];
-}
+// export async function asendSock(
+// 	sock: HttpSocket,
+// 	data: msgData,
+// 	timeout = 0,
+// ) {
+// 	if (sock.cb) {
+// 		return sock.cb.asendSession(NetEventEnum.eventCallback, data, timeout);
+// 	}
+// 	return [ErrorEnum.Callback_not_find, null];
+// }

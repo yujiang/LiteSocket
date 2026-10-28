@@ -3,7 +3,7 @@ import type { TestContext } from 'node:test';
 import { createLogger, Logger } from './logger_helpers';
 import { IOClient } from '../src/net/IOClient';
 import { IOServer } from '../src/net/IOServer';
-import type { ClientParam } from '../src/net/NetCallback';
+import type { ClientParam } from '../src/net/ClientSession';
 import { getWsUrl, LiteOptionsInput } from '../src/net/LiteNet';
 import { within } from './lite_test_helpers';
 

@@ -5,4 +5,4 @@ export * from './net/LiteServerClient';
 export * from './net/IOServer';
 export * from './net/IOServerSocket';
 export * from './net/LiteRoom';
-export * from './net/SockWrap';
+export * from './net/ServerSession';

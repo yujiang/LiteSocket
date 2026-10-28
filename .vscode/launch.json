@@ -10,8 +10,8 @@
         "<node_internals>/**"
       ],
       "sourceMaps": true,
-      "name": "调试 LiteSocket 示例",
-      "program": "${workspaceFolder}/.example-build/example/example_lite_msg.js",
+      "name": "调试当前示例文件",
+      "program": "${workspaceFolder}/.example-build/${relativeFileDirname}/${fileBasenameNoExtension}.js",
       "preLaunchTask": "build examples",
       "outFiles": [
         "${workspaceFolder}/.example-build/**/*.js"

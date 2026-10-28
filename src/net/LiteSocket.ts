@@ -14,6 +14,7 @@ import {
 } from './LiteNet';
 import { LiteLogger } from "../public/log";
 import { NetEventEnum } from './msgid';
+import { msgData } from '../client';
 
 export type SocketReason = string | number;
 
@@ -175,7 +176,7 @@ export abstract class LiteSocket {
 		return logHeadEx(this.constructor.name, this.name, func, logtype);
 	}
 
-	sendMsg(...args: any[]) : boolean {
+	sendMsg(...args: msgData) : boolean {
 		// console.log(args);
 		return this.emit(NetEventEnum.eventMod, args);
 	}

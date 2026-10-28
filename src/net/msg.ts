@@ -32,7 +32,7 @@ export const W10 = 100000; //十万
 export interface HttpSocket extends HttpSocketHandle {
 	connected?: boolean;
 
-	cb?: SessionCallback; // 调试直连使用
+	session?: SessionCallback; // 调试直连使用
 
 	logger?: LiteLogger; 
 

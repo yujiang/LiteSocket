@@ -12,7 +12,10 @@ import { NetEventEnum, MsgId } from "./msgid";
 import { TypeHandle } from "./TypeHandle";
 import { LiteServerClient } from "./LiteServerClient";
 import { IOServerSocket } from "./IOServerSocket";
-import { ErrorEnum, EventRtFunc } from "./ErrorEnum";
+import { ErrorEnum, EventRtFunc, EventReturn } from "./ErrorEnum";
+
+export type LiteMessageSocketHandler = (arg0: IOServerSocket, ...arg1: any[]) => void;
+export type LiteCallbackSocketHandler = (arg0: IOServerSocket, ...arg1: any[]) => EventReturn;
 
 export class IOServerBase {
     constructor(name: string, logger: LiteLogger) {
@@ -147,10 +150,13 @@ export class IOServer extends IOServerBase {
     }
 
     onClientConnected(socket: IOServerSocket): void {
-        socket.createSocketCB(this.name);
-        this.handle.bindSocket(socket);
+        socket.createSession(this.name);
+        this.bindSocket(socket);
     }
     
+    bindSocket(socket: IOServerSocket): void {
+        this.handle.bindSocket(socket);
+    }
     onClientDisconnected(socket: IOServerSocket): void {}
    
     override close(): void {
@@ -166,12 +172,12 @@ export class IOServer extends IOServerBase {
     }
 
     // 简化常见的调用
-    onMessage<Handler extends (...args: any[]) => unknown>(msg: number, callback: LiteMessageHandler<Handler>) {
+    onMessage(msg: number, callback: LiteMessageSocketHandler) {
         this.modHandle.register(msg, callback, null, SocketParamEnum.rawSocket, 'normal' )
     }
 
     // rpc call
-    onCallback(msg: number, callback: EventRtFunc) {
+    onCallback(msg: number, callback: LiteCallbackSocketHandler) {
         this.cbHandle.register(msg, callback, null, SocketParamEnum.rawSocket, 'normal' )
     }
 
@@ -190,4 +196,16 @@ export class IOServer extends IOServerBase {
     closeMsg(msgid: number, close: boolean) {
         this.handle.closeMsg(msgid, close)
     }
+
+    sendMod(id: number, type: string, args: msgData) {
+        const sock = this.findById(id);
+        sock?.sendMod(type, args);
+    }
+
+    async asendMod(id: number, type: string, args: msgData) {
+        const sock = this.findById(id);
+        return sock?.asendMod(type, args);
+    }
 }
+
+

@@ -6,7 +6,7 @@ import type { LiteMessageHandler } from "./LiteNet";
 import type { LiteLogger } from "../public/log";
 import { LiteClient, LiteClientOptionsInput, ClientEventFunc } from "./LiteClient";
 import { NetEventEnum } from "./msgid";
-import { ClientParam, NetCallback } from "./NetCallback";
+import { ClientParam, ClientSession } from "./ClientSession";
 import type { SocketReason } from "./LiteSocket";
 import { MsgHandle, MsgHandleCB, SocketParamEnum } from "./msg";
 import { TypeHandle } from "./TypeHandle";
@@ -16,7 +16,7 @@ import { msgData } from "../public/Depends";
 
 export class IOClient {
     socket: LiteClient;
-    callback: NetCallback;
+    callback: ClientSession;
     private checkTimer?: ReturnType<typeof setInterval>;
 
     name: string;    
@@ -35,6 +35,10 @@ export class IOClient {
         this.createHandle();
     }
 
+    getSocketId() {
+        return this.socket.serverId;
+    }
+
     handle: TypeHandle;
 
     modHandle: MsgHandle;
@@ -42,7 +46,7 @@ export class IOClient {
     bcHandle: MsgHandle;
 
     // client其实不需要
-    // cbHandle: MsgHandleCB;
+    cbHandle: MsgHandleCB;
 
     createHandle(): void {
         this.handle = new TypeHandle(this.name, this.logger);
@@ -52,7 +56,7 @@ export class IOClient {
         // );
         this.modHandle = this.handle.getMsghandle(NetEventEnum.eventMod);
         this.bcHandle = this.handle.getMsghandle(NetEventEnum.eventBc);
-        // this.cbHandle = this.handle.getMsghandleCallback();
+        this.cbHandle = this.handle.getMsghandleCallback();
     }
 
     serverUrl?: string;
@@ -63,7 +67,7 @@ export class IOClient {
         this.close();
         this.serverUrl = url;
         const socket = new LiteClient(this.name, this.logger, this.opts);
-        const callback = new NetCallback(this.name, this.logger, null);
+        const callback = new ClientSession(this.name, this.logger, null);
         callback.resetSocket(socket);
         this.socket = socket;
         this.callback = callback;
@@ -87,14 +91,14 @@ export class IOClient {
         return rt;
     }
 
-    private bindSocketCallback(socket: LiteClient, callback: NetCallback) {
+    private bindSocketCallback(socket: LiteClient, callback: ClientSession) {
         socket.on(NetEventEnum.eventCallbacked, (data: msgData) => {
             // logger.info('socket.on', NetEventEnum.eventCallbacked, data);
             const [id, rt] = data;
             callback.onCallbacked(id, rt);
         });
 
-        this.handle.bindSocket(socket);
+        this.bindSocket(socket);
         // socket.on(NetEventEnum.eventPack, (data: msgData) => this.unpackMsg(socket, data));
         socket.onEvent('disconnect', (reason, err) => {
             if (this.socket === socket) this.onDisconnect(reason, err);
@@ -105,6 +109,10 @@ export class IOClient {
             settleSendFailure(callback, reason, err);
         });
     }    
+
+    private bindSocket(socket: LiteClient){
+        this.handle.bindSocket(socket);
+    }
 
 	getId() {
 		return this.param.connectionId || 0;

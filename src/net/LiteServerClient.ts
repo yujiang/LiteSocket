@@ -25,6 +25,8 @@ function raw2String(raw: RawData): string {
 
 export class LiteServerClient extends LiteSocket implements CommonSocket{
 	id: number;
+    customData: any //存储数据用
+
 	readonly server: LiteServer;
 	readonly remoteAddress: string;
 	private handlers = new Map<string | symbol, (data?: any) => void>();

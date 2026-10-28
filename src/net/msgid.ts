@@ -48,11 +48,13 @@ export enum NetEventEnum {
 	eventF = 'f',
 	// gateway消息
 	eventGate = 'g',
+	eventGateMod = 'gmod',
+	eventGateCallback = 'gcb',
 	// pack消息
 	eventPack = 'p',
 }
 
 export function isCallbackMod(mod: string): boolean {
-	return mod === NetEventEnum.eventCallback;
+	return mod === NetEventEnum.eventCallback || mod === NetEventEnum.eventGateCallback;
 }
 

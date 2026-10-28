@@ -82,11 +82,11 @@ test('server-to-client request send failures also settle without a timeout timer
         null, SocketParamEnum.noSocket, 'server-request');
     await connect();
     const socket = peer();
-    const result = await within(socket.cb.asendSession(NetEventEnum.eventCallback,
+    const result = await within(socket.session.asendSession(NetEventEnum.eventCallback,
         [messageId, invalidPayload('oversized')], 0), 'server request send failure', 300);
     assert.deepStrictEqual(result, [ErrorEnum.settleSendFailure, msgSendMax]);
-    assert.deepStrictEqual(socket.cb.callbacks, {});
-    assert.deepStrictEqual(await socket.cb.asendSession(NetEventEnum.eventCallback, [messageId], 0), [ErrorEnum.ErrorOk, 'healthy']);
+    assert.deepStrictEqual(socket.session.callbacks, {});
+    assert.deepStrictEqual(await socket.session.asendSession(NetEventEnum.eventCallback, [messageId], 0), [ErrorEnum.ErrorOk, 'healthy']);
 });
 
 // 普通 send 没有 RPC session；它发送失败时只能报告 exception，不能误伤其他正在等待的 RPC。

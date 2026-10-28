@@ -28,7 +28,8 @@ export interface NetCallbackSocket {
 
 const SESSION_MAX = 10*10000;
 
-export class NetCallback extends SessionCallback {
+// 作为LiteClient的回调
+export class ClientSession extends SessionCallback {
 	constructor(name: string, logger: LiteLogger, func?: onTimeoutFunc) {
 		super(name, logger, func);
 		this.name = name;
@@ -56,7 +57,7 @@ export class NetCallback extends SessionCallback {
 		this.socket = socket;
 	}
 
-	override sendMsg(mod: string, msg: msgData): void {
+	override emitMsg(mod: string, msg: msgData): void {
 		// this.logger.debug('sendMsg', mod, MsgId[msg[0]], msg);
 		// if (this.funcCircle && Utils.isCircle(msg)) {
 		// 	this.logger.error('sendMsg circle', mod, MsgId[msg[0]], msg);
