@@ -24,7 +24,7 @@ export interface SocketEmit {
 	emit(event: string, args: msgData): void;
 }
 
-export const W10 = 100000; //十万
+export const W10 = 10*10000; //十万
 
 export type MsgFilterFunc = (socket: SocketEmit, msgid: number, data: any[]) => any[];
 

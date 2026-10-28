@@ -166,7 +166,7 @@ test('room broadcast uses LiteServer membership', async context => {
     const { server } = createServer(context);
     const url = await listen(server);
     const clients = [createClient(context), createClient(context), createClient(context)];
-    const messages: unknown[][] = clients.map(() => []);
+    const messages: unknown[][] = clients.map((): unknown[] => []);
     const barriers: boolean[] = clients.map(() => false);
     for (const [index, client] of clients.entries()) {
         client.on(NetEventEnum.eventBc, data => messages[index].push(data));

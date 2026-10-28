@@ -19,7 +19,7 @@ const eventTypes: Record<socketClientEvent, true> = {
     'pong-timeout': true, close: true, error: true, exception: true,
 };
 const observed = new Set<socketClientEvent>();
-type Entry = { event: socketClientEvent, reason?: string | number, error?: any };
+type Entry = { event: string, reason?: string | number, error?: any };
 
 function watchClient(context: TestContext, opts: LiteClientOptionsInput = {}) {
     const client = new LiteClient('events-test', createLogger(), opts);
@@ -33,7 +33,7 @@ function watchClient(context: TestContext, opts: LiteClientOptionsInput = {}) {
             order.push(`on:${event}`);
         });
     }
-    client.allEventFunc = (event: socketClientEvent, reason, error) => {
+    client.allEventFunc = (event: string, reason, error) => {
         allEntries.push({ event, reason, error });
         order.push(`all:${event}`);
     };

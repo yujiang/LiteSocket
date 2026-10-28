@@ -46,7 +46,7 @@ async function example() {
     server.onCallback(myMsg.c2s_rpc_addMessage, (socket: IOServerSocket, left: number, right: number) => {
         console.log('服务端收到 c2s_rpc_addMessage', left, right);
         return [ErrorEnum.ErrorOk, left + right];
-    });
+    });6
 
     // RPC 返回业务数据时，应返回 [错误码, 结果]；单独返回 number 会被当作错误码。
     client.onCallback(myMsg.s2c_rpc_mulMessage, async (left: number, right: number) => {

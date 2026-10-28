@@ -1,5 +1,4 @@
-import * as chalk from 'chalk';
-const colors = chalk;
+import { colors } from "./color";
 
 export interface LiteLogger {
 	info(...args: any[]): void;
@@ -45,4 +44,7 @@ export function logStar(logger: LiteLogger, msg: string){
 	logger.log(colors.green(star));
 	logger.log(colors.yellow(msg));
 	logger.log(colors.green(star));
+	// logger.log(star);
+	// logger.log(msg);
+	// logger.log(star);
 }

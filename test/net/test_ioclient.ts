@@ -3,6 +3,7 @@ import { test, TestContext } from 'node:test';
 import { createLogger } from '../logger_helpers';
 import { IOClient } from '../../src/net/IOClient';
 import { IOServer } from '../../src/net/IOServer';
+import type { IOServerSocket } from '../../src/net/IOServerSocket';
 import type { LiteClientOptionsInput } from '../../src/net/LiteClient';
 import type { ClientParam } from '../../src/net/ClientSession';
 import { SocketParamEnum } from '../../src/net/msg';
@@ -101,7 +102,7 @@ test('handlers registered before connecting receive broadcast and server request
     client.handle.getMsghandleCallback().register(messageId, (value: number) => [ErrorEnum.ErrorOk, value + 1],
         null, SocketParamEnum.noSocket, 'server-request');
     const onConnected = server.onClientConnected.bind(server);
-    context.mock.method(server, 'onClientConnected', socket => {
+    context.mock.method(server, 'onClientConnected', (socket: IOServerSocket) => {
         onConnected(socket);
         socket.emit(NetEventEnum.eventBc, [messageId, 'hello']);
     });

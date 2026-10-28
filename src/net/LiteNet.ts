@@ -1,7 +1,9 @@
 // LiteNet.ts
 // 提供公共的结构
 
-import * as chalk from 'chalk';
+import { colors } from "../public/color";
+
+// import * as chalk from 'chalk';
 
 // 必须return void
 // export type LiteMessageHandler<Handler extends (...args: any[]) => unknown> = Handler &
@@ -56,9 +58,9 @@ export interface SendExceptionDetails {
 export function logHeadEx(classname: string, name: string|number, func: string, logtype?: string) {
 	let prefix = '';
 	if (logtype === 'error') {
-		prefix = chalk.red('[ERROR]');
+		prefix = colors.red('[ERROR]');
 	} else if (logtype === 'warn') {
-		prefix = chalk.yellow('[WARN]');
+		prefix = colors.yellow('[WARN]');
 	} else {
 		return `[${classname}] ${name} ${func}`;
 	}

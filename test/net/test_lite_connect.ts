@@ -159,9 +159,13 @@ test('missing system times out after WebSocket opens', async context => {
     const onMessage = client.ws.onmessage;
     assert.deepStrictEqual(await within(result, 'missing system timeout'), [false, 'timeout']);
     await client.events.waitForCount('close', 1);
-    onMessage.call(client.ws, { data: JSON.stringify({ eventName: 'system', data: {
-        id: 9, maxSendLen: 1024, maxRecvLen: 1024,
-    } }) });
+    onMessage.call(client.ws, {
+        type: 'message',
+        target: client.ws,
+        data: JSON.stringify({ eventName: 'system', data: {
+            id: 9, maxSendLen: 1024, maxRecvLen: 1024,
+        } }),
+    });
     assert.deepStrictEqual(client.events.names(), ['connect_fail', 'close']);
     assert.equal(client.getSys(), undefined);
     assert.equal(client.getServerId(), 0);
@@ -203,9 +207,13 @@ test('switching URLs while waiting for system cancels the old initialization', a
     const oldSocket = client.ws;
     const oldMessage = oldSocket.onmessage;
     const second = client.connectPromise(replacement.url);
-    oldMessage.call(oldSocket, { data: JSON.stringify({ eventName: 'system', data: {
-        id: 999, maxSendLen: 1, maxRecvLen: 1,
-    } }) });
+    oldMessage.call(oldSocket, {
+        type: 'message',
+        target: oldSocket,
+        data: JSON.stringify({ eventName: 'system', data: {
+            id: 999, maxSendLen: 1, maxRecvLen: 1,
+        } }),
+    });
     assert.deepStrictEqual(await within(first, 'superseded initialization'), [false, 'superseded']);
     assert.deepStrictEqual(await within(second, 'replacement initialization'), [true, '']);
     assert.equal(client.getServerId(), 1);
@@ -347,11 +355,19 @@ test('switching URLs cancels the previous attempt and ignores its late callbacks
     const onMessage = oldSocket.onmessage;
     const second = client.connectPromise(url);
     assert.deepStrictEqual(await within(first, 'superseded connection'), [false, 'superseded']);
-    onOpen.call(oldSocket, {});
-    onError.call(oldSocket, { message: 'late error' });
-    onClose.call(oldSocket, { code: 1006, reason: 'late close' });
+    onOpen.call(oldSocket, { type: 'open', target: oldSocket });
+    onError.call(oldSocket, {
+        type: 'error', target: oldSocket, message: 'late error', error: new Error('late error'),
+    });
+    onClose.call(oldSocket, {
+        type: 'close', target: oldSocket, code: 1006, reason: 'late close', wasClean: false,
+    });
     // 伪造旧连接的 system 消息；新连接最终应获得真实 ID 1，而不是这里的 999。
-    onMessage.call(oldSocket, { data: JSON.stringify({ eventName: 'system', data: { id: 999, maxSendLen: 1, maxRecvLen: 1 } }) });
+    onMessage.call(oldSocket, {
+        type: 'message',
+        target: oldSocket,
+        data: JSON.stringify({ eventName: 'system', data: { id: 999, maxSendLen: 1, maxRecvLen: 1 } }),
+    });
     assert(client.isConnecting());
     assert(client.timeoutHandle);
     assert.deepStrictEqual(await within(second, 'replacement connection'), [true, '']);

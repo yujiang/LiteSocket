@@ -23,14 +23,12 @@
     "test:lib": "pnpm build && node --test test/build/*.cjs"
   },
   "dependencies": {
-    "chalk": "4",
     "tslib": "^2.8.1",
     "ws": "^8.22.0"
   },
   "devDependencies": {
     "@types/node": "^26.6.5",
     "@types/ws": "^8.18.2",
-    "dts-bundle-generator": "^9.5.1",
     "esbuild": "^0.28.2",
     "typescript": "~7.0.2"
   },

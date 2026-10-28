@@ -4,3 +4,5 @@ node_modules/
 .example-build/
 lib/
 bin-debug/
+!example/lib/
+!example/lib/**

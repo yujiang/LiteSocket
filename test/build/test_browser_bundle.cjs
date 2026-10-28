@@ -99,7 +99,7 @@ test('browser ESM and script builds expose client APIs without server code or No
 
 test('browser-only declarations compile without @types/node or ws', () => {
     try {
-        execFileSync(process.execPath, [require.resolve('typescript/bin/tsc'), '-p', 'test/build/tsconfig.browser-types.json'], {
+        execFileSync(process.execPath, [resolve(root, 'node_modules/typescript/bin/tsc'), '-p', 'test/build/tsconfig.browser-types.json'], {
             cwd: root, stdio: 'pipe', encoding: 'utf8',
         });
     } catch (error) {

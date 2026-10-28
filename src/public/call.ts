@@ -29,7 +29,7 @@ export function getSelfMsgId(self: unknown, data: any[]) {
 
 export function tryCallfunctionRt(func: EventCallbackFunc, args: any[], self: unknown): boolean {
 	try {
-		return func.apply(self, args);
+		return Boolean(func.apply(self, args));
 	} catch (err) {
 		logExceptionArgs('try_callfunction_rt', err, args, getSelfId(self));
 		return false;

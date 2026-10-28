@@ -22,7 +22,7 @@ export class Utils {
 }
 
 // env.ts
-const processenv = {
+const processenv: Record<string, string> = {
 	dev: '0',
 };
 
@@ -37,5 +37,4 @@ export function getEnv(key: string): string {
 export function isEnvProfile(): boolean {
 	return getEnv('profile') === '1';
 }
-
 

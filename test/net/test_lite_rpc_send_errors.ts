@@ -68,7 +68,7 @@ test('synchronous WebSocket send errors settle the matching request', async cont
     let fail = true;
     context.mock.method(socket, 'send', (...args: any[]) => {
         if (fail) { fail = false; throw new Error('transport send failed'); }
-        return send.apply(socket, args);
+        return Reflect.apply(send, socket, args);
     });
     assert.equal((await within(client.asend([messageId]), 'transport send failure', 300))[0], ErrorEnum.settleSendFailure);
     assert.deepStrictEqual(client.callback.callbacks, {});

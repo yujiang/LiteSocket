@@ -11,7 +11,7 @@ import { LiteLogger } from "../public/log";
 import { ErrorEnum, FirstErrorRt, CallbackFirstError } from './ErrorEnum';
 
 // rt 1 suc 0 fail
-export type packCallback = (rt: number) => void;
+// export type packCallback = (rt: number) => void;
 
 export interface ClientParam {
 	connectionId?: number;
@@ -19,7 +19,7 @@ export interface ClientParam {
 	checkIntervalMs?: number; // 默认1000
 }
 
-export type onCircleFunc = (mod: string, msg: msgData) => void;
+// export type onCircleFunc = (mod: string, msg: msgData) => void;
 
 export interface ClientSessionSocket {
 	connected?: boolean;

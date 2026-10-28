@@ -229,7 +229,7 @@ for (const target of ['server', 'room'] as const) {
         test(`${target} broadcast reports ${kind} once for multiple recipients`, async context => {
             const { server, client, peer, clientMessages, broadcastExceptions, serverEvents } = await createConnection(context);
             const otherClients = [createClient(context), createClient(context)];
-            const otherMessages: string[][] = otherClients.map(() => []);
+            const otherMessages: string[][] = otherClients.map((): string[] => []);
             for (const [index, other] of otherClients.entries()) {
                 other.on('payload', data => otherMessages[index].push(data));
                 await connect(other, client.url);
@@ -377,4 +377,3 @@ for (const detector of ['server', 'client'] as const) {
         assert.equal(serverEvents.length, serverCount);
     });
 }
-

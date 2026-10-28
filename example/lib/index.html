@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LiteSocket library example</title>
+</head>
+<body>
+    <h1>LiteSocket library example</h1>
+    <p>WebSocket server: <code id="server-url"></code></p>
+    <button id="connect" type="button">Connect</button>
+    <button id="hello" type="button" disabled>Send message</button>
+    <button id="add" type="button" disabled>Call RPC (3 + 5)</button>
+    <pre id="output" aria-live="polite"></pre>
+    <script>
+        window.liteSocketExampleUrl = "__WS_URL__";
+    </script>
+    <script type="importmap">
+        { "imports": { "@mosnpm/litesocket/client": "/lib/client/index.js" } }
+    </script>
+    <script type="module" src="/example_lib_brower.js"></script>
+</body>
+</html>

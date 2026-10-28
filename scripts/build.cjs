@@ -1,8 +1,7 @@
 const { execFileSync } = require('node:child_process');
-const { rmSync, mkdirSync, writeFileSync } = require('node:fs');
-const { resolve, relative, sep } = require('node:path');
+const { rmSync, mkdirSync, readFileSync, readdirSync, writeFileSync } = require('node:fs');
+const { resolve, relative, sep, extname } = require('node:path');
 const esbuild = require('esbuild');
-const { generateDtsBundle } = require('dts-bundle-generator');
 
 const root = resolve(__dirname, '..');
 process.chdir(root);
@@ -17,7 +16,7 @@ function clean(folder) {
 }
 
 function tsc(project) {
-    execFileSync(process.execPath, [require.resolve('typescript/bin/tsc'), '-p', project], { stdio: 'inherit' });
+    execFileSync(process.execPath, [resolve(root, 'node_modules/typescript/bin/tsc'), '-p', project], { stdio: 'inherit' });
 }
 
 async function main() {
@@ -43,12 +42,30 @@ async function main() {
                 throw new Error('Browser bundle contains a Node.js dependency or server module');
             }
         }
-        const [declarations] = generateDtsBundle([{ filePath: 'src/client.ts', output: { umdModuleName: 'LiteSocket' } }], {
-            preferredConfigPath: 'tsconfig.browser.json',
-        });
-        writeFileSync('lib/client/index.d.ts', declarations);
+        tsc('tsconfig.browser.declarations.json');
+        rewriteBrowserTypeImports(resolve(root, 'lib/client/types'));
+        writeFileSync('lib/client/index.d.ts', "export as namespace LiteSocket;\nexport * from './types/client';\n");
         writeFileSync('lib/client/package.json', JSON.stringify({ type: 'module', main: 'index.js', types: 'index.d.ts' }, null, 2) + '\n');
         console.log('Built lib/client (browser ESM, script global LiteSocket + declarations)');
+    }
+}
+
+function rewriteBrowserTypeImports(directory) {
+    for (const entry of readdirSync(directory, { withFileTypes: true })) {
+        const file = resolve(directory, entry.name);
+        if (entry.isDirectory()) {
+            rewriteBrowserTypeImports(file);
+        } else if (entry.isFile() && file.endsWith('.d.ts')) {
+            const declarations = readFileSync(file, 'utf8').replace(
+                /(from\s+['"])(ws|\.{1,2}\/[^'"]+)(['"])/g,
+                (match, prefix, moduleName, suffix) => {
+                    if (moduleName === 'ws') moduleName = '../browser/ws';
+                    if (moduleName.startsWith('.') && !extname(moduleName)) moduleName += '.js';
+                    return `${prefix}${moduleName}${suffix}`;
+                },
+            );
+            writeFileSync(file, declarations);
+        }
     }
 }
 

@@ -1,4 +1,3 @@
-import { IOClient } from "../src/client";
 import { createSliceLogger } from "../src/public/log";
 
 import {GameServer} from "../src/game/GameServer"
