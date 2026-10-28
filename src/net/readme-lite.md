@@ -61,7 +61,7 @@ const [ok, error] = await server.listenPromise(8443);
 if (!ok) throw error;
 ```
 
-`IOServer` 通过 `listen(name, port, opts)` 的第三个参数传入同样的配置。均未配置时使用普通 WS；只配置其中一个或传入空路径时返回 `ERR_TLS_CONFIG`，不会回退到 WS。文件在监听时读取，相对路径以进程工作目录为基准。证书读取、解析失败或端口占用均返回 `[false, error]`；监听失败不会启动心跳。
+`IOServer` 通过 `listen(port, opts)` 的第二个参数传入同样的配置。均未配置时使用普通 WS；只配置其中一个或传入空路径时返回 `ERR_TLS_CONFIG`，不会回退到 WS。文件在监听时读取，相对路径以进程工作目录为基准。证书读取、解析失败或端口占用均返回 `[false, error]`；监听失败不会启动心跳。
 
 使用与证书匹配的域名连接 `wss://example.com:8443`。`getWsUrl(host, port, true)` 返回 WSS 地址，省略第三个参数仍返回 WS 地址。客户端继续验证证书和主机名；Node 客户端测试自签名证书时，可通过现有 `createSocket` 配置信任的 CA：
 
@@ -90,7 +90,7 @@ await client.connectPromise('wss://localhost:8443');
 const server = new LiteServer('server', {
     messageRateLimit: { perSecond: 1, burst: 60 },
 });
-// IOServer 则通过 listen(name, port, opts) 的第三个参数传入相同配置。
+// IOServer 则通过 listen(port, opts) 的第二个参数传入相同配置。
 ```
 
 `perSecond` 是每秒补充的额度，允许正的小数；`burst` 是正整数，表示最多积攒多少额度。新连接初始额度为 `burst`，每条业务消息消耗一个额度。空闲或网络阻塞期间会积攒额度，恢复后允许一次集中到达，但不会超过桶容量。
@@ -98,13 +98,13 @@ const server = new LiteServer('server', {
 额度不足时不派发该消息，调用 `kickoff(id, 'message rate limit')`，断线及待处理 RPC 走原有清理流程。
 该限制是“平均速率 + 突发容量”，不是严格的“任意一分钟最多 60 条”。它按连接计数，不按用户或 IP，重新连接会获得新的额度。
 
-`IOServerBase.listen(name, port, opts)` 返回相同格式的 Promise，端口占用时每秒重试，其他错误直接返回。
+`IOServerBase.listen(port, opts)` 返回相同格式的 Promise，端口占用时每秒重试，其他错误直接返回。
 成功后通过 `io` 访问监听实例，`close()` 关闭已经启动的服务器。不支持启动中取消监听或取消端口占用重试，也不支持并发调用 `listen()`；按启动流程等待 `await listen()` 完成即可。已启动后再次 `listen()` 会先关闭原服务器。
 
 ## IOServer 业务封装
 
 `IOServer` 使用 `LiteServer`，保留已有的 `TypeHandle`、`MsgHandle`、`MsgHandleCB` 和 `SockWrap` 消息及请求回调协议。
-构造 `new IOServer(name, logger?)` 后即可向 `modhandle`、`cbhandle` 注册业务处理，再调用 `await server.listen(name, port, opts)`。
+构造 `new IOServer(name, logger?)` 后即可向 `modhandle`、`cbhandle` 注册业务处理，再调用 `await server.listen(port, opts)`。
 底层连接、消息和日志回调在监听前绑定；重试或重新监听不会重建业务处理器、丢失已注册消息。
 
 业务处理器获得的 `IOServerSocket` 继承 `LiteServerClient`，直接持有 WebSocket，只增加 `cb`、`logger`、`$socketClientId` 等业务能力，不再包装另一层连接。
@@ -206,4 +206,3 @@ JSON 解析成功后还会检查消息信封和 `system/ping/pong` 的数据结�
 | LiteServerClient.ts | 服务端持有的客户端连接 |
 | LiteRoom.ts | 房间和广播 |
 | LiteClient.ts | 客户端连接、心跳和可选自动重连 |
-

@@ -22,7 +22,7 @@ async function setup(context: TestContext, checktimeout = false, opts: LiteClien
         server.close();
         logger.close();
     });
-    assert.deepStrictEqual(await within(server.listen('io-client-test', 0), 'server listen'), [true]);
+    assert.deepStrictEqual(await within(server.listen(0), 'server listen'), [true]);
     const url = `ws://127.0.0.1:${server.io.port}`;
     const disconnect = (...args: unknown[]) => { disconnects.push(args); };
     return { client, server, url, disconnect, disconnects };
@@ -310,7 +310,7 @@ test('IOClient does not destroy an automatic client after initial connection fai
     assert.equal(await client.connectServer(url, disconnect), false);
     const socket = client.socket;
     assert(socket);
-    assert.deepStrictEqual(await server.listen('restarted', port), [true]);
+    assert.deepStrictEqual(await server.listen(port), [true]);
     await waitUntil(() => socket.isConnected(), 'IOClient recovery after initial failure');
     assert.equal(client.socket, socket);
     assert.deepStrictEqual(disconnects, []);

@@ -109,10 +109,10 @@ test('runtime listener errors are logged after listening succeeds', async contex
 // 适配层直接 await LiteServer 的监听结果，成功后才公布 io，并能接收真实客户端。
 test('IOServerBase publishes io after successful listening', async context => {
     const { owner } = createOwner(context);
-    const listening = owner.listen('io-success', 0, { maxRecvLen: 256 });
+    const listening = owner.listen(0, { maxRecvLen: 256 });
     assert.equal(owner.io, undefined);
     assert.deepStrictEqual(await within(listening, 'IO server listening'), [true]);
-    assert.equal(owner.io.name, 'io-success');
+    assert.equal(owner.io.name, 'listen-test');
     assert(owner.io.port > 0);
     const client = createClient(context);
     await connect(client, `ws://127.0.0.1:${owner.io.port}`);
@@ -124,7 +124,7 @@ test('IOServerBase retries occupied ports until released', async context => {
     const occupied = await createLiteServer(context);
     const { owner, warnings } = createOwner(context);
     const attempts = recordAttempts(context);
-    const listening = owner.listen('io-retry', occupied.port);
+    const listening = owner.listen(occupied.port);
     context.after(async () => {
         occupied.server.close();
         await within(listening, 'finish listening before cleanup');
@@ -148,7 +148,7 @@ test('IOServerBase retries occupied ports until released', async context => {
 test('IOServerBase does not retry non-EADDRINUSE failures', async context => {
     const { owner, warnings } = createOwner(context);
     const attempts = recordAttempts(context);
-    const [ok, error] = await within(owner.listen('invalid', -1), 'non-retryable failure');
+    const [ok, error] = await within(owner.listen(-1), 'non-retryable failure');
     assert.equal(ok, false);
     assert.equal(error.code, 'ERR_SOCKET_BAD_PORT');
     assert.equal(owner.io, undefined);
@@ -159,7 +159,7 @@ test('IOServerBase does not retry non-EADDRINUSE failures', async context => {
 // 启动完成后 close 关闭监听器和已连接的客户端，重复 close 不产生额外影响。
 test('IOServerBase closes a successfully started server', async context => {
     const { owner } = createOwner(context);
-    assert.deepStrictEqual(await within(owner.listen('close-started', 0), 'server started'), [true]);
+    assert.deepStrictEqual(await within(owner.listen(0), 'server started'), [true]);
     const server = owner.io;
     const websocketServer = server.wss;
     const closed = new Promise<void>(resolve => websocketServer.once('close', () => resolve()));
