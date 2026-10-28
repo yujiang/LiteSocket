@@ -1,5 +1,3 @@
-
-
 export class Player {
     level = 0;
     clientid = 0;
