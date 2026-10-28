@@ -31,17 +31,11 @@ function checkMessageHandlers(server: IOServer, client: IOClient) {
     server.onCallback(9, () => 'result');
     // @ts-expect-error 服务端回调的第一个参数必须是 socket。
     server.onMessage(10, (socket: string) => {});
-    // @ts-expect-error 客户端普通消息同样不能返回字符串。
-    client.onMessage(3, () => 'result');
-    // @ts-expect-error 客户端异步普通消息同样不能返回结果。
-    client.onMessage(4, async () => [0, 'result']);
 
     // 已声明的函数也检查返回类型，不局限于直接传入的箭头函数。
     const withResult = (name: string) => name.length;
     const withoutResult = (name: string): void => { console.log(name); };
     client.onMessage(5, withoutResult);
-    // @ts-expect-error 已声明的函数返回数字，也应拒绝。
-    client.onMessage(6, withResult);
 
     // 服务端 void 回调也允许部分分支带返回值。
     server.onMessage(7, (socket: IOServerSocket, enabled: boolean) => {

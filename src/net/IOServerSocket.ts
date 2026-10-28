@@ -9,7 +9,7 @@ import type { clientEvent } from './LiteServer';
 import type { SocketReason } from './LiteSocket';
 import { settleSendFailure } from './LiteUtils';
 import { msgData } from '../public/Depends';
-import { ErrorEnum } from './ErrorEnum';
+import { ErrorEnum, FirstErrorRt } from './ErrorEnum';
 
 // 主要是为了添加callback
 
@@ -53,7 +53,19 @@ export class IOServerSocket extends LiteServerClient implements HttpSocket {
         }
     }
 
-    asendMod(type: string, msg: msgData, timeout = 0){
+    async asendMod(type: string, msg: msgData, timeout = 0) : Promise<FirstErrorRt> {
+        if (!this.session) {
+            return [ErrorEnum.ErrorError, "!this.session"];
+        }
         return this.session?.asendSession(type, msg, timeout);
     }
+
+    sendMsg(...args: msgData) {
+        this.sendMod(NetEventEnum.eventMod, args);
+    }
+
+    asendMsg(...args: msgData) : Promise<FirstErrorRt> {
+        return this.asendMod(NetEventEnum.eventCallback, args);
+    }
+
 }

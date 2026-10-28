@@ -2,7 +2,6 @@
 // 把 LiteClient(替代socket.io) + NetCallback + msgHandle + Log 合在一起
 // 支持asend ...
 
-import type { LiteMessageHandler } from "./LiteNet";
 import type { LiteLogger } from "../public/log";
 import { LiteClient, LiteClientOptionsInput, ClientEventFunc } from "./LiteClient";
 import { NetEventEnum } from "./msgid";
@@ -11,7 +10,7 @@ import type { SocketReason } from "./LiteSocket";
 import { MsgHandle, MsgHandleCB, SocketParamEnum } from "./msg";
 import { TypeHandle } from "./TypeHandle";
 import { settleSendFailure } from "./LiteUtils";
-import { ErrorEnum, FirstErrorRt } from "./ErrorEnum";
+import { ErrorEnum, EventReturn, EventRtFunc, EventVoidFunc, FirstErrorRt } from "./ErrorEnum";
 import { msgData } from "../public/Depends";
 
 export class IOClient {
@@ -227,12 +226,16 @@ export class IOClient {
 	// 	}
 	// }
     
-    onMessage<Handler extends (...args: any[]) => unknown>(msg: number, callback: LiteMessageHandler<Handler>) {
+    onMessage(msg: number, callback: EventVoidFunc) {
         this.modHandle.register(msg, callback, null, SocketParamEnum.noSocket, 'noraml')
 	}
 
-    onBroadcast<Handler extends (...args: any[]) => unknown>(msg: number, callback: LiteMessageHandler<Handler>) {
+    onBroadcast(msg: number, callback: EventVoidFunc) {
         this.bcHandle.register(msg, callback, null, SocketParamEnum.noSocket, 'noraml')
+	}
+
+    onCallback(msg: number, callback: EventRtFunc) {
+        this.cbHandle.register(msg, callback, null, SocketParamEnum.noSocket, 'noraml')
 	}
 
 }

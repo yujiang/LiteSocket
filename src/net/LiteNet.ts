@@ -4,8 +4,8 @@
 import * as chalk from 'chalk';
 
 // 必须return void
-export type LiteMessageHandler<Handler extends (...args: any[]) => unknown> = Handler &
-	([Awaited<ReturnType<Handler>>] extends [void] ? unknown : never);
+// export type LiteMessageHandler<Handler extends (...args: any[]) => unknown> = Handler &
+// 	([Awaited<ReturnType<Handler>>] extends [void] ? unknown : never);
 
 export interface SocketSysMessage {
 	id: number;

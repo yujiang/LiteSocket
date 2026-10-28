@@ -1,4 +1,5 @@
 // 运行：pnpm example
+import { strict as assert } from "node:assert";
 import { setTimeout as delay } from 'node:timers/promises';
 import { IOClient } from '../src/net/IOClient';
 import { IOServer } from '../src/net/IOServer';
@@ -10,8 +11,8 @@ import { createHeadLogger, createSliceLogger } from '../src/public/log';
 enum myMsg {
  s2c_helloMessage = 900001,
  c2s_helloReplyMessage,
- rpc_addMessage ,
- rpc_mulMessage ,
+ c2s_rpc_addMessage ,
+ s2c_rpc_mulMessage ,
 }
 
 export function getMsgName(id: number): string {
@@ -42,14 +43,14 @@ async function example() {
     });
 
     // RPC 消息：处理函数直接返回“错误码 + 结果”，框架自动关联客户端的 Promise。
-    server.onCallback(myMsg.rpc_addMessage, (socket: IOServerSocket, left: number, right: number) => {
-        console.log('服务端收到 RPC：', left, right);
+    server.onCallback(myMsg.c2s_rpc_addMessage, (socket: IOServerSocket, left: number, right: number) => {
+        console.log('服务端收到 c2s_rpc_addMessage', left, right);
         return [ErrorEnum.ErrorOk, left + right];
     });
 
     // RPC 返回业务数据时，应返回 [错误码, 结果]；单独返回 number 会被当作错误码。
-    server.onCallback(myMsg.rpc_mulMessage, async (socket: IOServerSocket, left: number, right: number) => {
-        console.log('服务端收到 RPC2：', left, right);
+    client.onCallback(myMsg.s2c_rpc_mulMessage, async (left: number, right: number) => {
+        console.log('客户端收到 s2c_rpc_mulMessage', left, right);
         await delay(1000);
         return [ErrorEnum.ErrorOk, left * right];
     });    
@@ -64,21 +65,24 @@ async function example() {
         });
         if (!connected) throw new Error('客户端连接失败');
 
-        server.io.observe(client.socket.getServerId(), console);
+        const connectid = client.socket.getServerId();
+        server.io.observe(connectid, console);
 
         client.sendMsg(myMsg.s2c_helloMessage, 'Lite');
         await helloReply;
 
         // asend 不需要注册返回消息，直接 await 获取服务端返回的结果。
-        const [code, sum] = await client.asendMsg(myMsg.rpc_addMessage, 3, 5);
+        const [code, sum] = await client.asendMsg(myMsg.c2s_rpc_addMessage, 3, 5);
         if (code !== ErrorEnum.ErrorOk || sum !== 8) throw new Error(`RPC 失败：${code}`);
-        console.log('客户端 await asend addMessage 得到结果：', sum);
+        console.log('客户端 await asend c2s_rpc_addMessage 得到结果：', sum);
 
-        const [code2, sum2] = await client.asend([myMsg.rpc_mulMessage, 3, 5], 3000);
+        const sc = server.findById(connectid);
+        assert(sc);
+        const [code2, sum2] = await sc.asendMsg(myMsg.s2c_rpc_mulMessage, 3, 5);
         if (code2 !== ErrorEnum.ErrorOk || sum2 !== 15) {
             throw new Error(`RPC2 结果不符合预期：${sum2}`);
         }
-        console.log('客户端 await asend addMessage2 得到结果：', sum2);
+        console.log('客户端 await asend s2c_rpc_mulMessage 得到结果：', sum2);
     } finally {
         client.destroy('example finished');
         server.close();
