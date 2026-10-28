@@ -1,9 +1,7 @@
 import { msgData } from '../public/Depends';
-import { ErrorEnum } from './ErrorEnum';
 import { LiteLogger } from "../public/log";
 import { SessionCallback } from './SessionCallback';
 import { W10, type HttpSocket } from './msg';
-import { NetEventEnum } from './msgid';
 
 // 只在IOServerSocket.createSocketCB创建
 export class ServerSession extends SessionCallback {

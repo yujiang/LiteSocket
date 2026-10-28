@@ -3,7 +3,6 @@
 import { NetEventEnum, isCallbackMod, msgData } from "../client";
 import { IOServer } from "../net/IOServer";
 import { IOServerSocket } from "../net/IOServerSocket";
-import { LiteServerClient } from "../net/LiteServerClient";
 import { GateClients } from "./GateClients";
 
 export interface GameCustomData  {
@@ -40,7 +39,7 @@ export class GateGames extends IOServer {
     async routeMsg(socket: IOServerSocket, stype: string, data: msgData) {
         let clientid = data.shift(); // [client,msgid, ...]  => [msgid, ...]
         if (isCallbackMod(stype)) {
-			const session = data[data.length - 1];
+			const session = data.pop();
 			const rt = await this.route.asendMod(clientid, NetEventEnum.eventCallback, data);
 			socket.emit(NetEventEnum.eventCallbacked, [session, rt]);
         }

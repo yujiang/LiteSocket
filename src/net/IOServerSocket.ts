@@ -14,12 +14,12 @@ import { ErrorEnum } from './ErrorEnum';
 // 主要是为了添加callback
 
 export class IOServerSocket extends LiteServerClient implements HttpSocket {
-    $socketClientId: number;
+    //$socketClientId: number;
     session: ServerSession;
 
     constructor(name: string, logger: LiteLogger, ws: WebSocket, server: LiteServer, id: number, remoteAddress = '') {
         super(name, logger, ws, server, id, remoteAddress);
-        this.$socketClientId = id;
+        //this.$socketClientId = id;
     }
 
     override dispose(reason?: string): boolean {

@@ -36,9 +36,15 @@ async function run(){
 
     await c1.login();
     await c2.login();
-    await c1.enterGame(game.id);
-    await c2.enterGame(game.id);
-    await c1.chat(c2.getSocketId(), 'hello world');
+    const player1 = 123;
+    const player2 = 456;
+    await c1.enterGame(game.id, player1);
+    await c2.enterGame(game.id, player2);
+    const r1 = await c1.chat(c2.playerid, 'hello world');
+    await c2.exit();
+    //const r2 = await c2.chat(c1.playerid, 'good job!');
+    await c1.chat(player2, 'good job!');
+    process.exit(0);
 }
 
 run();

@@ -22,7 +22,7 @@ export enum SocketParamEnum {
 }
 
 export interface HttpSocketHandle {
-	$socketClientId?: number;
+	//$socketClientId?: number;
 	emit(event: string, args: msgData): void;
 }
 

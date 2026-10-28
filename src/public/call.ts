@@ -1,6 +1,8 @@
 import { EventCallbackFunc } from "./Depends";
 
-export function logExceptionArgs(where: string, error: any, args: unknown, playerid: number): void {}
+export function logExceptionArgs(where: string, error: any, args: unknown, playerid: number): void {
+	// TODO:
+}
 
 export function getSelfId(self: any) {
 	if (self == null || typeof self !== 'object') {

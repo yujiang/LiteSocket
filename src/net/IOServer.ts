@@ -2,7 +2,7 @@
 // 把 LiteServer(替代socket.io) + msgHandle + Log 合在一起
 
 import { setTimeout as delay } from "node:timers/promises";
-import { LiteMessageHandler, LiteOptionsInput } from "./LiteNet";
+import { LiteOptionsInput } from "./LiteNet";
 import { LiteLogger, logStar } from "../public/log";
 import { ListenResult, LiteServer } from "./LiteServer";
 import { strict as assert } from "node:assert";
@@ -12,7 +12,7 @@ import { NetEventEnum, MsgId } from "./msgid";
 import { TypeHandle } from "./TypeHandle";
 import { LiteServerClient } from "./LiteServerClient";
 import { IOServerSocket } from "./IOServerSocket";
-import { ErrorEnum, EventRtFunc, EventReturn } from "./ErrorEnum";
+import { ErrorEnum, EventReturn } from "./ErrorEnum";
 
 export type LiteMessageSocketHandler = (arg0: IOServerSocket, ...arg1: any[]) => void;
 export type LiteCallbackSocketHandler = (arg0: IOServerSocket, ...arg1: any[]) => EventReturn;
@@ -144,7 +144,7 @@ export class IOServer extends IOServerBase {
 
     private disconnectSocket(socket: IOServerSocket, reason: string): void {
         if (!socket.dispose(reason)) return;
-        this.logger.warn(`client ${socket.$socketClientId} ${getIp(socket)} disconnect for ${reason}!`);
+        this.logger.warn(`client ${socket.id} ${getIp(socket)} disconnect for ${reason}!`);
         // this.handleLifecycle(socket, MsgId.MSG_SYSTEM_DISCONNECT);
         this.onClientDisconnected(socket);
     }

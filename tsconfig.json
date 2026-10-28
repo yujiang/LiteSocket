@@ -8,6 +8,7 @@
         // "esModuleInterop": true,  // 让 default 导出更易用
         // "moduleResolution": "node",   // 确保能解析 node_modules
         "strictNullChecks": false,
+        "moduleDetection": "force",
 
         "allowSyntheticDefaultImports": true,
         "experimentalDecorators": true,

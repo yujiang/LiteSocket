@@ -5,8 +5,8 @@ timeout无法统一处理，只能每个msg自带timeout！
 */
 
 import { SessionCallback, onTimeoutFunc } from './SessionCallback';
-import { getMsgName, NetEventEnum } from './msgid';
-import { msgData, packData, Utils } from '../public/Depends';
+import { getMsgName } from './msgid';
+import { msgData, Utils } from '../public/Depends';
 import { LiteLogger } from "../public/log";
 import { ErrorEnum, FirstErrorRt, CallbackFirstError } from './ErrorEnum';
 

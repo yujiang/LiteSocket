@@ -1,14 +1,16 @@
 // gateServer 和 clients 连接
 
-import { isCallbackMod, LiteOptionsInput, msgData, NetEventEnum, W10 } from "../client";
+import { ErrorEnum, isCallbackMod, msgData, NetEventEnum, W10 } from "../client";
 import { IOServer } from "../net/IOServer";
 import { IOServerSocket } from "../net/IOServerSocket";
 import { insertAt } from "../public/arrayUtils";
 import { GateGames } from "./GateGames";
+import { MsgGameGateEnum } from "./MsgGame";
 
 export interface GateCustomData  {
 	logined: boolean;
 	gameid: number;
+	playerid: number;
 }
 
 // 一个Gate连接多个Client
@@ -23,10 +25,21 @@ export class GateClients extends IOServer {
 
 		socket.customData = {
 			gameid: 0,
+			playerid: 0,
 			logined: false,
 		}
         this.bindRoute(socket);
     }
+
+	override onClientDisconnected(socket: IOServerSocket): void {
+		super.onClientDisconnected(socket); 
+
+		const custom: GateCustomData = socket.customData as any;
+		if (custom.gameid && custom.playerid) {
+			const game = this.route.findGame(custom.gameid);
+			game?.sendMsg(MsgGameGateEnum.gate2game_clientdisconnect, socket.id);
+		}
+	}
     
 
     // 改变了常规的流程
@@ -54,21 +67,28 @@ export class GateClients extends IOServer {
 		const socket = this.findById(clientId);
 		if (!socket) return;
 		
-		// 如果没有绑定routeid == 游戏服
+		// gameid 是业务编号，需要先找到对应的游戏服连接。
 		const custom: GateCustomData = socket.customData as any;
-		if (!custom?.gameid) return;
+		const game = custom?.gameid ? this.route.findGame(custom.gameid) : undefined;
+		if (!game) {
+			if (isCallbackMod(stype)) {
+				socket.emit(NetEventEnum.eventCallbacked, [data[data.length - 1], [ErrorEnum.ErrorError, "game not found"]]);
+			}
+			return;
+		}
 
 		insertAt(data, 1, clientId); // [msgid, ...]  => [msgid, clientid, ...]
 		if (isCallbackMod(stype)) {
 			// 路由的作用！
 			// client --> gate --> game --> gate --> client!
 			// session放在末尾！
-			const session = data[data.length - 1];
-			const rt = await this.route.asendMod(custom.gameid, stype, data);
+			// 每一段连接使用独立 session，先取出上一段的 session。
+			const session = data.pop();
+			const rt = await game.asendMod(stype, data);
 			this.onSendCallback();
 			socket.emit(NetEventEnum.eventCallbacked, [session, rt]);
 		} else {
-			this.route.sendMod(custom.gameid, stype, data);
+			game.sendMod(stype, data);
 		}
 	}
 

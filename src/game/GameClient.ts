@@ -1,4 +1,5 @@
 import { ErrorEnum, IOClient, NetEventEnum } from "../client";
+import { MsgClientEnum } from "./MsgGame";
 
 export class GameClient extends IOClient{
     override createHandle(){
@@ -15,18 +16,33 @@ export class GameClient extends IOClient{
         return rt;
     }
     gameid = 0;
-    async enterGame(id: number){
-        const rt = await this.asendMod(NetEventEnum.eventGateCallback,[MsgClientEnum.gate_entergame,id])
+    playerid = 0;
+    async enterGame(gameid: number, playerid: number){
+        const rt = await this.asendMod(NetEventEnum.eventGateCallback,[MsgClientEnum.gate_entergame,gameid,playerid])
         if (rt[0] == ErrorEnum.ErrorOk){
-            this.gameid = id;
+            this.gameid = gameid;
+            this.playerid = playerid;
         }
         return rt;
     }
 
-    async chat(id: number, msg: string){
-        const rt = await this.asendMsg(MsgClientEnum.game_chat,id, msg);
+    async chat(playerid: number, msg: string){
+        const rt = await this.asendMsg(MsgClientEnum.game_chat,playerid, msg);
         if (rt[0] == ErrorEnum.ErrorOk){
             // .. nothing            
+        }
+        else {
+            console.log(`chat error`, rt);
+        }
+        return rt;
+    }
+
+    async exit(){
+        const rt = await this.asendMod(NetEventEnum.eventGateCallback, [MsgClientEnum.gate_exit]);
+        if (rt[0] === ErrorEnum.ErrorOk) {
+            this.logined = false;
+            this.gameid = 0;
+            this.playerid = 0;
         }
         return rt;
     }

@@ -1,13 +1,16 @@
 // 先随便谢谢
 
-enum MsgGameGateEnum{
+export enum MsgGameGateEnum{
     game2gate_info = 1000, // 通知gate我的id
     gate2game_entergame,    
+    gate2game_exit,    
+    gate2game_clientdisconnect,    
 }
 
-enum MsgClientEnum{
+export enum MsgClientEnum{
     gate_login = 2000,
     gate_entergame,
     game_chat,    
+    gate_exit,
     c_chat,
 }

@@ -1,4 +1,4 @@
-import { ErrorEnum, EventReturn, FirstErrorRt, IOClient, LiteMessageHandler, msgData, NetEventEnum, SocketParamEnum } from "../client";
+import { ErrorEnum, EventReturn, FirstErrorRt, IOClient, msgData, NetEventEnum, SocketParamEnum } from "../client";
 
 export type GameMessageHandler = (clientid: number, ...arg1: any[]) => void;
 export type GameCallbackHandler = (clientid: number, ...arg1: any[]) => EventReturn;
