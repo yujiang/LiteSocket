@@ -40,8 +40,11 @@ test('handlers registered before listen process the first connection and busines
     assert.equal(server.io, undefined);
     const connections: IOServerSocket[] = [];
     const messages: Array<[number, string]> = [];
-    server.modHandle.register(MsgId.MSG_SYSTEM_CONNECT, (socket: IOServerSocket) => connections.push(socket),
-        null, SocketParamEnum.rawSocket, 'connect-test');
+    const onConnected = server.onClientConnected.bind(server);
+    context.mock.method(server, 'onClientConnected', (socket: IOServerSocket) => {
+        onConnected(socket);
+        connections.push(socket);
+    });
     server.modHandle.register(testMessage, (socket: IOServerSocket, value: string) => messages.push([socket.id, value]),
         null, SocketParamEnum.rawSocket, 'message-test');
     const url = await listen(server);
@@ -115,7 +118,7 @@ test('built-in server query returns valid callback results', async context => {
     assert.deepStrictEqual(errors, []);
 });
 
-// 两个客户端的 SockWrap 都从 session=1 开始；cb2 必须按连接隔离，不能把另一个客户端的请求结束。
+// 两个客户端的 ServerSession 都从 session=1 开始；cb2 必须按连接隔离，不能把另一个客户端的请求结束。
 test('server-to-client callbacks are isolated per connection', async context => {
     const { server, errors } = createServer(context);
     const url = await listen(server);
@@ -129,25 +132,24 @@ test('server-to-client callbacks are isolated per connection', async context => 
     }
     const sockets = clients.map(client => server.findById(client.getServerId()));
     const results = await within(Promise.all(sockets.map(socket =>
-        socket.cb.asendSession(NetEventEnum.eventCallback, [testMessage], 1000))), 'server callback results');
+        socket.session.asendSession(NetEventEnum.eventCallback, [testMessage], 1000))), 'server callback results');
     assert.deepStrictEqual(results, [[ErrorEnum.ErrorOk, 0], [ErrorEnum.ErrorOk, 1]]);
-    for (const socket of sockets) assert.deepStrictEqual(Object.keys(socket.cb.callbacks), []);
+    for (const socket of sockets) assert.deepStrictEqual(Object.keys(socket.session.callbacks), []);
     assert.deepStrictEqual(errors, []);
 });
 
 // 被动断开后，业务的断线消息只派发一次，未完成的服务端请求以 Callback_disconnect 结束并移除记录。
-test('disconnect dispatches one lifecycle message and settles pending callbacks', async context => {
+test('disconnect dispatches one lifecycle callback and settles pending callbacks', async context => {
     const { server } = createServer(context);
     const disconnected: IOServerSocket[] = [];
-    server.modHandle.register(MsgId.MSG_SYSTEM_DISCONNECT, (socket: IOServerSocket) => disconnected.push(socket),
-        null, SocketParamEnum.rawSocket, 'disconnect-test');
+    context.mock.method(server, 'onClientDisconnected', (socket: IOServerSocket) => { disconnected.push(socket); });
     const url = await listen(server);
     const client = createClient(context);
     let received = false;
     client.on(NetEventEnum.eventCallback, () => { received = true; });
     await connect(client, url);
     const socket = server.findById(client.getServerId());
-    const pending = socket.cb.asendSession(NetEventEnum.eventCallback, [testMessage], 1000);
+    const pending = socket.session.asendSession(NetEventEnum.eventCallback, [testMessage], 1000);
     await waitUntil(() => received, 'pending server request');
     client.disconnect();
     const result = await within(pending, 'pending callback cancelled by disconnect');
@@ -156,7 +158,7 @@ test('disconnect dispatches one lifecycle message and settles pending callbacks'
     assert.equal(result[0], ErrorEnum.Callback_disconnect);
     assert.deepStrictEqual(disconnected, [socket]);
     assert(!socket.connected);
-    assert.deepStrictEqual(Object.keys(socket.cb.callbacks), []);
+    assert.deepStrictEqual(Object.keys(socket.session.callbacks), []);
 });
 
 // socket.join/leave 映射到 LiteServer 房间；bc 只发送给当前成员，不给离开者或房间外的客户端。
@@ -192,14 +194,13 @@ test('room broadcast uses LiteServer membership', async context => {
 test('server close settles callbacks and cleans each business socket once', async context => {
     const { server } = createServer(context);
     const disconnected: IOServerSocket[] = [];
-    server.modHandle.register(MsgId.MSG_SYSTEM_DISCONNECT, (socket: IOServerSocket) => disconnected.push(socket),
-        null, SocketParamEnum.rawSocket, 'shutdown-test');
+    context.mock.method(server, 'onClientDisconnected', (socket: IOServerSocket) => { disconnected.push(socket); });
     const url = await listen(server);
     const client = createClient(context);
     client.on(NetEventEnum.eventCallback, () => {});
     await connect(client, url);
     const socket = server.findById(client.getServerId());
-    const pending = socket.cb.asendSession(NetEventEnum.eventCallback, [testMessage], 1000);
+    const pending = socket.session.asendSession(NetEventEnum.eventCallback, [testMessage], 1000);
     const transport = server.io;
     server.close();
     assert.equal((await within(pending, 'shutdown callback cancellation'))[0], ErrorEnum.Callback_disconnect);
@@ -215,8 +216,11 @@ test('relisten preserves handlers and does not duplicate connection setup', asyn
     const { server, errors } = createServer(context);
     const messages: string[] = [];
     let connections = 0;
-    server.modHandle.register(MsgId.MSG_SYSTEM_CONNECT, () => { connections++; },
-        null, SocketParamEnum.noSocket, 'relisten-connect');
+    const onConnected = server.onClientConnected.bind(server);
+    context.mock.method(server, 'onClientConnected', (socket: IOServerSocket) => {
+        onConnected(socket);
+        connections++;
+    });
     server.modHandle.register(testMessage, (value: string) => messages.push(value),
         null, SocketParamEnum.noSocket, 'relisten-test');
     const handle = server.handle;
@@ -260,8 +264,7 @@ test('client and broadcast exceptions are forwarded to the server logger', async
 test('socket error followed by close cleans business state exactly once', async context => {
     const { server, errors } = createServer(context);
     const disconnected: IOServerSocket[] = [];
-    server.modHandle.register(MsgId.MSG_SYSTEM_DISCONNECT, (socket: IOServerSocket) => disconnected.push(socket),
-        null, SocketParamEnum.rawSocket, 'socket-error-test');
+    context.mock.method(server, 'onClientDisconnected', (socket: IOServerSocket) => { disconnected.push(socket); });
     const url = await listen(server);
     const client = createClient(context);
     await connect(client, url);

@@ -22,13 +22,15 @@ function checkMessageHandlers(server: IOServer, client: IOClient) {
     client.onMessage(1, (name: string) => { console.log(name); });
     client.onMessage(2, async () => { await Promise.resolve(); });
 
-    // 有返回值的函数应注册到 onCallback，而不是 onMessage。
-    // @ts-expect-error 普通消息处理函数不能返回数字。
+    // 服务端采用标准 void 回调类型，允许传入有返回值的函数，但返回值被忽略。
     server.onMessage(4, () => 1);
-    // @ts-expect-error 普通消息处理函数不能返回数组。
     server.onMessage(5, () => [0, 'result']);
-    // @ts-expect-error 异步处理函数也不能返回业务结果。
     server.onMessage(6, async () => 1);
+    server.onCallback(8, () => [0, 'result']);
+    // @ts-expect-error RPC 处理函数必须返回错误码或结果元组。
+    server.onCallback(9, () => 'result');
+    // @ts-expect-error 服务端回调的第一个参数必须是 socket。
+    server.onMessage(10, (socket: string) => {});
     // @ts-expect-error 客户端普通消息同样不能返回字符串。
     client.onMessage(3, () => 'result');
     // @ts-expect-error 客户端异步普通消息同样不能返回结果。
@@ -41,8 +43,7 @@ function checkMessageHandlers(server: IOServer, client: IOClient) {
     // @ts-expect-error 已声明的函数返回数字，也应拒绝。
     client.onMessage(6, withResult);
 
-    // 只有部分分支返回结果，同样属于有返回值的处理函数。
-    // @ts-expect-error 不能用提前 return 以外的方式返回业务结果。
+    // 服务端 void 回调也允许部分分支带返回值。
     server.onMessage(7, (socket: IOServerSocket, enabled: boolean) => {
         if (enabled) return 1;
     });

@@ -4,7 +4,7 @@ import { createLogger } from '../logger_helpers';
 import { IOClient } from '../../src/net/IOClient';
 import { IOServer } from '../../src/net/IOServer';
 import type { LiteClientOptionsInput } from '../../src/net/LiteClient';
-import type { ClientParam } from '../../src/net/NetCallback';
+import type { ClientParam } from '../../src/net/ClientSession';
 import { SocketParamEnum } from '../../src/net/msg';
 import { MsgId, NetEventEnum } from '../../src/net/msgid';
 import { ErrorEnum } from '../../src/net/ErrorEnum';
@@ -100,12 +100,14 @@ test('handlers registered before connecting receive broadcast and server request
         null, SocketParamEnum.noSocket, 'broadcast');
     client.handle.getMsghandleCallback().register(messageId, (value: number) => [ErrorEnum.ErrorOk, value + 1],
         null, SocketParamEnum.noSocket, 'server-request');
-    server.modHandle.register(MsgId.MSG_SYSTEM_CONNECT, socket => {
+    const onConnected = server.onClientConnected.bind(server);
+    context.mock.method(server, 'onClientConnected', socket => {
+        onConnected(socket);
         socket.emit(NetEventEnum.eventBc, [messageId, 'hello']);
-    }, null, SocketParamEnum.rawSocket, 'early-broadcast');
+    });
     assert(await client.connectServer(url, disconnect));
     const socket = server.findById(client.socket.getServerId());
-    assert.deepStrictEqual(await within(socket.cb.asendSession(NetEventEnum.eventCallback, [messageId, 4], 0),
+    assert.deepStrictEqual(await within(socket.session.asendSession(NetEventEnum.eventCallback, [messageId, 4], 0),
         'server request'), [ErrorEnum.ErrorOk, 5]);
     await waitUntil(() => messages.length === 1, 'early broadcast');
 });
@@ -244,7 +246,7 @@ test('disconnect callback can immediately reconnect and receives error details',
         [ErrorEnum.ErrorOk, server.name]);
 });
 
-// IOClient 的轮询定时器触发 NetCallback 检查；销毁释放定时器，已排队的旧回调也不再执行检查。
+// IOClient 的轮询定时器触发 ClientSession 检查；销毁释放定时器，已排队的旧回调也不再执行检查。
 test('IOClient owns the timeout interval and releases it on destroy', async context => {
     const timers = trackIntervals(context);
     const { client, server, url, disconnect } = await setup(context, true);

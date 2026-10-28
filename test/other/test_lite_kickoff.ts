@@ -1,7 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { SocketCloseCode } from '../../src/net/LiteNet';
-import { NetEventEnum, MsgId } from '../../src/net/msgid';
+import { NetEventEnum } from '../../src/net/msgid';
 import { SocketParamEnum } from '../../src/net/msg';
 import { ErrorEnum, FirstErrorRt } from '../../src/net/ErrorEnum';
 import { createIOPair } from '../io_test_helpers';
@@ -63,7 +63,7 @@ test('kickoff settles pending RPCs in both directions through normal disconnect 
     let receivedByServer = false;
     let receivedByClient = false;
     let disconnects = 0;
-    server.onMessage(MsgId.MSG_SYSTEM_DISCONNECT, () => { disconnects++; });
+    context.mock.method(server, 'onClientDisconnected', () => { disconnects++; });
     server.onCallback(messageId, () => {
         receivedByServer = true;
         return new Promise<FirstErrorRt>(() => {});
@@ -76,7 +76,7 @@ test('kickoff settles pending RPCs in both directions through normal disconnect 
     const socket = peer();
     const callback = client.callback;
     const pendingClient = client.asend([messageId]);
-    const pendingServer = socket.cb.asendSession(NetEventEnum.eventCallback, [messageId], 0);
+    const pendingServer = socket.session.asendSession(NetEventEnum.eventCallback, [messageId], 0);
     await waitUntil(() => receivedByServer && receivedByClient, 'both pending requests received');
     server.io.kickoff(socket.id);
     const results = await within(Promise.all([pendingClient, pendingServer]), 'pending requests after kick');
@@ -84,5 +84,5 @@ test('kickoff settles pending RPCs in both directions through normal disconnect 
     await waitUntil(() => server.io.clientsNum() === 0, 'business connection removed');
     assert.equal(disconnects, 1);
     assert.deepStrictEqual(callback.callbacks, {});
-    assert.deepStrictEqual(socket.cb.callbacks, {});
+    assert.deepStrictEqual(socket.session.callbacks, {});
 });

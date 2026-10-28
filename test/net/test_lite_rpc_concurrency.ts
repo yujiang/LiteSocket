@@ -81,7 +81,7 @@ test('identical session numbers on different clients do not interfere', async co
     assert.deepStrictEqual(await within(first, 'first client reply'), [ErrorEnum.ErrorOk, 'first']);
 });
 
-// 服务端主动向客户端发起多个请求，也必须支持倒序响应，验证 SockWrap 的 session 分发。
+// 服务端主动向客户端发起多个请求，也必须支持倒序响应，验证 ServerSession 的 session 分发。
 test('server-to-client concurrent requests also support out-of-order replies', async context => {
     const { client, connect, peer } = await createIOPair(context);
     const pending = new Map<number, ReturnType<typeof deferred<FirstErrorRt>>>();
@@ -92,9 +92,9 @@ test('server-to-client concurrent requests also support out-of-order replies', a
     }, null, SocketParamEnum.noSocket, 'reverse-server-requests');
     await connect();
     const socket = peer();
-    const requests = [1, 2, 3].map(value => socket.cb.asendSession(NetEventEnum.eventCallback, [messageId, value], 0));
+    const requests = [1, 2, 3].map(value => socket.session.asendSession(NetEventEnum.eventCallback, [messageId, value], 0));
     await waitUntil(() => pending.size === 3, 'server requests received');
     for (const value of [3, 2, 1]) pending.get(value).resolve([ErrorEnum.ErrorOk, value]);
     assert.deepStrictEqual(await within(Promise.all(requests), 'server request replies'), [[0, 1], [0, 2], [0, 3]]);
-    assert.deepStrictEqual(socket.cb.callbacks, {});
+    assert.deepStrictEqual(socket.session.callbacks, {});
 });

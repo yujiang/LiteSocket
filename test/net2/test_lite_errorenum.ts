@@ -5,8 +5,7 @@ import type { msgData } from '../../src/public/Depends';
 import { ErrorEnum, FirstErrorRt, getErrorEnumString } from '../../src/net/ErrorEnum';
 import { MsgId, NetEventEnum } from '../../src/net/msgid';
 import { SocketParamEnum } from '../../src/net/msg';
-import { NetCallback } from '../../src/net/NetCallback';
-import { asendSock } from '../../src/net/SockWrap';
+import { ClientSession } from '../../src/net/ClientSession';
 import { msgJsonStringError, msgSendError, msgSendMax } from '../../src/net/LiteNet';
 import { createIOClient, createIOPair, deferred } from '../io_test_helpers';
 import { createLogger } from '../logger_helpers';
@@ -83,16 +82,8 @@ test('Net_notconnect: requests before connecting and after closing', async conte
     assert.deepStrictEqual(callback.callbacks, {});
 });
 
-test('Callback_not_find: asendSock without a callback manager', async () => {
-    let sent = 0;
-    const result = await asendSock({
-        connected: true,
-        emit() { sent++; },
-        on() { return this; },
-    }, [messageId]);
-    checkCode(result as FirstErrorRt, ErrorEnum.Callback_not_find);
-    assert.deepStrictEqual(result, [ErrorEnum.Callback_not_find, null]);
-    assert.equal(sent, 0);
+test('Callback_not_find remains reserved after removal of asendSock', () => {
+    assert.equal(getErrorEnumString(ErrorEnum.Callback_not_find), 'Callback_not_find');
 });
 
 test('Callback_timeout: unanswered request expires and late reply is ignored', async context => {
@@ -130,7 +121,7 @@ test('Callback_disconnect: connection loss settles every pending request', async
 });
 
 test('Callback_bindsocket: rebinding settles old sessions before using the new socket', async () => {
-    const callback = new NetCallback('rebind-test', createLogger(), null);
+    const callback = new ClientSession('rebind-test', createLogger(), null);
     let oldSends = 0;
     let newSends = 0;
     callback.resetSocket({ connected: true, emit() { oldSends++; } });
@@ -168,9 +159,10 @@ for (const kind of ['oversized', 'circular', 'bigint', 'transport'] as const) {
     });
 }
 
-test('all runtime ErrorEnum values were triggered; Max is the custom-code boundary', () => {
+test('all active ErrorEnum values were triggered; Max is the custom-code boundary', () => {
+    // asendSock 已移除，该错误码保留编号但没有运行时触发入口。
     const runtimeCodes = Object.values(ErrorEnum).filter((value): value is ErrorEnum =>
-        typeof value === 'number' && value !== ErrorEnum.Max);
+        typeof value === 'number' && value !== ErrorEnum.Max && value !== ErrorEnum.Callback_not_find);
     assert.deepStrictEqual([...covered].sort((a, b) => a - b), runtimeCodes.sort((a, b) => a - b));
     assert.equal(ErrorEnum.Max, 100);
     assert(runtimeCodes.every(code => code < ErrorEnum.Max));
