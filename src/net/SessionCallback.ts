@@ -3,14 +3,17 @@ import { LiteLogger } from "../public/log";
 import { tryCall } from '../public/call';
 import { msgData } from '../public/Depends';
 import { CallbackFirstError, ErrorEnum, FirstErrorRt } from './ErrorEnum';
+import { W10 } from './msg';
 
 export type CallbackData = [string, msgData, CallbackFirstError, number, number];
 export type onTimeoutFunc = (msgid: number, data: CallbackData, timeout: number) => void;
+
 
 // 作为LiteServerClient的callback回调
 export abstract class SessionCallback {
 	name: string;
 	logger: LiteLogger;
+	timeoutMax = W10;
 
 	func: onTimeoutFunc;
 
@@ -123,8 +126,9 @@ export abstract class SessionCallback {
 		let num = 0;
 		for (const [id, data] of Object.entries(this.callbacks)) {
 			// 4 timeout 3 timesend
-			if (data[4] > 0 && now - data[3] > data[4]) {
-				this.onTimeout(data, data[4]);
+			const timeout = data[4] || this.timeoutMax; //默认 10秒
+			if (now - data[3] > timeout) {
+				this.onTimeout(data, timeout);
 				this.onSessionCallback(Number(id), [ErrorEnum.Callback_timeout]);
 				num++;
 			}

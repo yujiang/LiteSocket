@@ -6,7 +6,7 @@ const client = new LiteClient('browser', createSliceLogger(), {
 });
 client.onEvent('connect', () => client.emit('hello', 'browser'));
 client.close(SocketCloseCode.normal);
-const sent: boolean = client.sendMsg(950003, 'payload');
+const sent: boolean = client.emitMsg(950003, 'payload');
 void sent;
 const rpc = new IOClient('rpc', console, { checktimeout: true });
 rpc.sendMsg(1, 'browser', { enabled: true });

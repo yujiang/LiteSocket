@@ -114,20 +114,20 @@ for (const platform of ['Node.js', 'browser']) {
         const api = platform === 'browser' ? browser(context).api : full;
         const client = new api.LiteClient('send-msg', logger);
         context.after(() => client.destroy());
-        assert.equal(client.sendMsg(950003, 'not connected'), false);
+        assert.equal(client.emitMsg(950003, 'not connected'), false);
         assert.equal((await within(client.connectPromise(url), 'sendMsg connection'))[0], true);
         const received = new Promise(resolve => server.onMessage('mod', (peer, data) => resolve({ peer, data })));
-        assert.equal(client.sendMsg(950003, 'payload'), true);
+        assert.equal(client.emitMsg(950003, 'payload'), true);
         const incoming = await within(received, 'sendMsg received by server');
         assert.deepEqual(incoming.data, [950003, 'payload']);
         assert.equal(incoming.peer, server.findById(client.getServerId()));
         const reply = new Promise(resolve => client.on('mod', resolve));
-        assert.equal(incoming.peer.sendMsg(950004, 'reply'), true);
+        assert.equal(incoming.peer.emitMsg(950004, 'reply'), true);
         assert.deepEqual(plain(await within(reply, 'sendMsg reply')), [950004, 'reply']);
         const closed = new Promise(resolve => client.onEvent('close', resolve));
         client.close();
         await within(closed, 'sendMsg client close');
-        assert.equal(client.sendMsg(950003, 'closed'), false);
+        assert.equal(client.emitMsg(950003, 'closed'), false);
     });
 }
 
