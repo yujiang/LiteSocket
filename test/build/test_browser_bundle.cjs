@@ -71,7 +71,7 @@ async function listen(context, Server = full.LiteServer) {
     const server = new Server('bundle-test', logger);
     context.after(() => close(server.io || server));
     const result = server instanceof full.IOServer
-        ? await server.listen('bundle-test', 0) : await server.listenPromise(0);
+        ? await server.listen(0) : await server.listenPromise(0);
     assert.deepEqual(result, [true]);
     const transport = server.io || server;
     return { server, url: `ws://127.0.0.1:${transport.port}`, logger };

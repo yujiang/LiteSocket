@@ -26,28 +26,28 @@ export class IOServerBase {
 
     io: LiteServer;
 
-    async listen(name: string, port: number, opts: LiteOptionsInput = {}): Promise<ListenResult> {
+    async listen(port: number, opts: LiteOptionsInput = {}): Promise<ListenResult> {
         this.close();
         this.logger.info('');
         this.logger.warn(`IOServerBase start listen:${port}`, opts);
-        logStar(this.logger,`IOServerBase ${name} start listen:${port}`);
+        logStar(this.logger,`IOServerBase ${this.name} start listen:${port}`);
         let retries = 0;
         while (true) {
-            const server = this.createServer(name, opts);
+            const server = this.createServer(this.name, opts);
             this.configureServer(server);
             const result = await server.listenPromise(port);
             if (result[0]) {
                 this.io = server;
-                this.logger.warn(`IOServer ${name} listened:${server.port}`);
+                this.logger.warn(`IOServer ${this.name} listened:${server.port}`);
                 return result;
             }
             server.close();
             const error = result[1];
             if (error?.code !== 'EADDRINUSE') {
-                this.logger.error(`IOServer ${name} listen ${port} error`, error);
+                this.logger.error(`IOServer ${this.name} listen ${port} error`, error);
                 return result;
             }
-            this.logger.warn(`IOServer ${name} listen ${port} in use, retrying...`, ++retries);
+            this.logger.warn(`IOServer ${this.name} listen ${port} in use, retrying...`, ++retries);
             await delay(1000);
         }
     }
@@ -122,31 +122,37 @@ export class IOServer extends IOServerBase {
         server.onClient('client-error', (client, reason, err) => {
             this.logger.error('IOServer client error', client.id, reason, err);
         });
-        server.onClient('client-connect', client => {
-            assert(client instanceof IOServerSocket);
-            const socket = client;
-            socket.createSocketCB(this.name);
-            this.handle.bindSocket(socket);
-            this.logger.warn(`client ${client.id} ${getIp(socket)} connected!`);
-            this.handleLifecycle(socket, MsgId.MSG_SYSTEM_CONNECT);
+        server.onClient('client-connect', socket => {
+            assert(socket instanceof IOServerSocket);
+            this.logger.warn(`client ${socket.id} ${getIp(socket)} connected!`);
+            // this.handleLifecycle(socket, MsgId.MSG_SYSTEM_CONNECT);
+            this.onClientConnected(socket);
         });
         server.onClient('client-disconnect', (client, reason) => {
             if (client instanceof IOServerSocket) this.disconnectSocket(client, String(reason));
         });
     }
 
-    private handleLifecycle(socket: IOServerSocket, message: MsgId): void {
-        if (this.modHandle.getHandle(message)) {
-            this.handle.handleTypeMsg(socket, NetEventEnum.eventMod, [message]);
-        }
-    }
+    // private handleLifecycle(socket: IOServerSocket, message: MsgId): void {
+    //     //if (this.modHandle.getHandle(message)) {
+    //     this.handle.handleTypeMsg(socket, NetEventEnum.eventMod, [message], false);
+    //     //}
+    // }
 
     private disconnectSocket(socket: IOServerSocket, reason: string): void {
         if (!socket.dispose(reason)) return;
         this.logger.warn(`client ${socket.$socketClientId} ${getIp(socket)} disconnect for ${reason}!`);
-        this.handleLifecycle(socket, MsgId.MSG_SYSTEM_DISCONNECT);
+        // this.handleLifecycle(socket, MsgId.MSG_SYSTEM_DISCONNECT);
+        this.onClientDisconnected(socket);
     }
 
+    onClientConnected(socket: IOServerSocket): void {
+        socket.createSocketCB(this.name);
+        this.handle.bindSocket(socket);
+    }
+    
+    onClientDisconnected(socket: IOServerSocket): void {}
+   
     override close(): void {
         for (const socket of Array.from(this.io?.clients.values() ?? [])) {
             if (socket instanceof IOServerSocket) this.disconnectSocket(socket, 'server close');
@@ -171,6 +177,10 @@ export class IOServer extends IOServerBase {
 
     kickoff(id: number, reason = 'kickoff'): boolean {
         return this.io?.kickoff(id, reason) ?? false;    
+    }
+
+    exit(id: number): boolean {
+        return this.io?.exit(id) ?? false;    
     }
 
     observe(id: number, log:LiteLogger) : boolean {

@@ -36,14 +36,15 @@ export class TypeHandle {
 		}
 	}
 
-	handleTypeMsg(socket: HttpSocketOn, stype: string, data: msgData): boolean {
+	handleTypeMsg(socket: HttpSocketOn, stype: string, data: msgData, warning = true): boolean {
 		const h = this.handles[stype];
 		if (!h) {
-			this.logger.warn(this.name, 'not find typehandle', stype);
+			if (warning){
+				this.logger.warn(this.name, 'not find typehandle', stype);
+			}
 			return false;
 		}
-		const rt = h.handleMsg(socket, data);
-		return true;
+		return !! h.handleMsg(socket, data, warning);
 	}
 
 	getMsghandle(stype: string): MsgHandle {

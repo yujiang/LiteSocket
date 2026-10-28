@@ -56,7 +56,7 @@ async function example() {
 
     try {
         // 先注册消息，再监听和连接；端口 0 表示自动分配空闲端口。
-        const [listening, error] = await server.listen('example-server', 0);
+        const [listening, error] = await server.listen(0);
         if (!listening) throw error;
 
         const connected = await client.connectServer(`ws://127.0.0.1:${server.io.port}`, (reason, err) => {

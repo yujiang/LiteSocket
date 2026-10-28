@@ -30,7 +30,7 @@ function createServer(context: TestContext) {
 }
 
 async function listen(server: IOServer) {
-    assert.deepStrictEqual(await within(server.listen('io-test', 0), 'IOServer listening'), [true]);
+    assert.deepStrictEqual(await within(server.listen(0), 'IOServer listening'), [true]);
     return `ws://127.0.0.1:${server.io.port}`;
 }
 
@@ -240,7 +240,7 @@ test('client and broadcast exceptions are forwarded to the server logger', async
     const messages: string[] = [];
     server.modHandle.register(testMessage, (value: string) => messages.push(value),
         null, SocketParamEnum.noSocket, 'exception-test');
-    assert.deepStrictEqual(await server.listen('io-test', 0, { maxSendLen: 256, maxRecvLen: 128 }), [true]);
+    assert.deepStrictEqual(await server.listen(0, { maxSendLen: 256, maxRecvLen: 128 }), [true]);
     const client = createClient(context);
     await connect(client, `ws://127.0.0.1:${server.io.port}`);
     client.wsSend('{invalid JSON');

@@ -115,7 +115,7 @@ async function main(): Promise<void> {
     server.onCallback(Message.Add, (_socket: IOServerSocket, a: number, b: number) => {
         return [ErrorEnum.ErrorOk, a + b];
     });
-    const [ok, error] = await server.listen('server', 8080);
+    const [ok, error] = await server.listen(8080);
     if (!ok) throw error;
 }
 

@@ -64,6 +64,7 @@ export class LiteServer {
 	}
 
 	private assignClientId(): number {
+		// 这里考虑回归...
 		return this.nextClientId++;
 	}
 
@@ -330,6 +331,13 @@ export class LiteServer {
 		this.logger.warn(this.logHead('kickoff', 'warn'), 'id:', id, 'reason:', reason);
 		const client = this.findById(id);
 		client?.disconnect(SocketCloseCode.disconnect, reason);
+		return !!client;
+	}
+
+	// 正常退出
+	exit(id: number){
+		const client = this.findById(id);
+		client?.disconnect(SocketCloseCode.disconnect, 'exit');
 		return !!client;
 	}
 
