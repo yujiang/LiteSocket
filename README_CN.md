@@ -192,3 +192,7 @@ pnpm test:lib   # 构建产物、浏览器声明和客户端运行时测试
 ```
 
 `test:lib` 需要 Node.js 22+ 的原生 WebSocket。测试在隔离环境中移除 `require`、`process` 和 `Buffer`，提供浏览器风格的数字定时器，使用原生 WebSocket 与实际服务端通信，验证消息、二进制 JSON、RPC、超时和重连。此验证不启动浏览器 UI。
+
+## 许可证
+
+LiteSocket 使用 [MIT 许可证](LICENSE)。

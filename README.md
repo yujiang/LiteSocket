@@ -192,3 +192,7 @@ pnpm test:lib   # Build outputs, browser declarations, and client runtime tests
 ```
 
 `test:lib` requires the native WebSocket implementation in Node.js 22+. Tests run in an isolated environment without `require`, `process`, or `Buffer`, using browser-style numeric timers and native WebSocket against a real server. They cover messages, binary JSON, RPC, timeouts, and reconnection. This verification does not launch a browser UI.
+
+## License
+
+LiteSocket is licensed under the [MIT License](LICENSE).
