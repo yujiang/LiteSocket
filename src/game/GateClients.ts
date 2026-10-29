@@ -12,7 +12,8 @@ export class ClientData {
 	gameid = 0;
 	playerid = 0;
     exit(reason: string) {
-        console.log("ClientData.exit", this.gameid, this.playerid, reason)
+        // console.log("ClientData.exit", this.gameid, this.playerid, reason)
+        console.log(`[gate] game ${this.gameid} exit`, this.playerid);
         this.logined = false;
         this.gameid = 0;
 	    this.playerid = 0;

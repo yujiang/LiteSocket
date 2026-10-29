@@ -144,7 +144,8 @@ export abstract class LiteSocket {
 		try {
 			parsed = LiteSocket.decodeMessage(data);
 		} catch (err) {
-			this.logger.error(this.logHead('parseMessage', 'error'), 'LiteSocket.decodeMessage JSON.parse error:\n', data, err);
+			this.logger.error(this.logHead('parseMessage', 'error'), 
+				'LiteSocket.decodeMessage JSON.parse data:', data, "err:\n", err);
 			this.emitEvent('exception', msgJsonParseError);
 			return;
 		}

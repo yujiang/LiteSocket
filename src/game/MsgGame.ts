@@ -1,19 +1,32 @@
 // 先随便写点消息
 
 export enum MsgGameGateEnum{
-    game2gate_info = 1000,  // 我的id
+    start = 1000,
+    game2gate_info = start,  // 我的id
     gate2game_entergame,    // 进入游戏 
     gate2game_exit,         // 退出
     gate2game_disconnect,   // 断线了
     game2gate_exit,         // game主动通知gate退出，可能是gm kickoff等
-    Max,
+    end,
 }
 
 export enum MsgClientEnum{
-    gate_login = 2000,
+    start = 2000,
+    gate_login = start,
     gate_entergame,
     game_chat,    
     gate_exit,
     c_chat,
-    Max,
+    end,
+}
+
+
+export function getGameMsgName(id: number): string {
+    // console.log('getMsgName:', id);
+    if (id >= MsgGameGateEnum.start && id < MsgGameGateEnum.end) {
+        return MsgGameGateEnum[id];
+    }
+    if (id >= MsgClientEnum.start && id < MsgClientEnum.end) {
+        return MsgClientEnum[id];
+    }
 }

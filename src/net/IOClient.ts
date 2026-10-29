@@ -125,9 +125,9 @@ export class IOClient {
             this.close(String(reason));
         }
         this.logger.warn(`onDisconnect ${this.name} for ${reason}`);
-        if (err) {
-            this.logger.info(err);
-        }
+        // if (err) {
+        //     this.logger.info(err);
+        // }
         // this.emit(SocketEvent.disconnect, reason);
         disconnect?.(reason, err);
     }

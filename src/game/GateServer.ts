@@ -114,7 +114,7 @@ export class GateServer {
                 }
                 custom.gameid = gameid;
                 custom.playerid = playerid;
-                console.log("[gate] enter game", gameid, socket.id, playerid);
+                console.log(`[gate] game ${gameid} client ${socket.id} enter:`, playerid);
                 return [ErrorEnum.ErrorOk];
             }
         )
@@ -144,7 +144,6 @@ export class GateServer {
                 if (rt[0] !== ErrorEnum.ErrorOk){
                     return rt;
                 }
-                console.log("[gate] exit game", custom.gameid, socket.id, custom.playerid);
                 custom.exit("gate_exit");
                 // socket.disconnect(); 不行，否则消息无法收到了
                 return [ErrorEnum.ErrorOk];
