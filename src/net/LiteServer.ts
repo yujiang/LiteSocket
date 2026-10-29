@@ -163,7 +163,7 @@ export class LiteServer {
 	}
 
 	//唯一的函数, 不用Event来实现
-	private clientEventListeners: Record<string, SocketEventFunc> = {};
+	private clientEventListeners: Record<string, SocketEventFunc> = Object.create(null);
 	private exceptionHandler?: ServerExceptionFunc;
 
 	onEvent(event: 'exception', handler: ServerExceptionFunc): void {
@@ -250,7 +250,7 @@ export class LiteServer {
 	}
 
 	//唯一的函数, 不用Event来实现
-	msgHandlers: Record<string, (client: LiteServerClient, data?: any) => void> = {};
+	msgHandlers: Record<string, (client: LiteServerClient, data?: any) => void> = Object.create(null);
 	onMessage(event: string, handler: (client: LiteServerClient, data?: any) => void): void {
 		const old = this.msgHandlers[event];
 		if (old) {
@@ -297,8 +297,8 @@ export class LiteServer {
 		this.httpsServer = undefined;
 		for (const socket of this.httpsSockets) socket.destroySoon();
 		this.httpsSockets.clear();
-		this.msgHandlers = {};
-		this.clientEventListeners = {};
+		this.msgHandlers = Object.create(null);
+		this.clientEventListeners = Object.create(null);
 		this.exceptionHandler = undefined;
 	}
 

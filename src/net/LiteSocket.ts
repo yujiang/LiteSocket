@@ -20,6 +20,7 @@ export type SocketReason = string | number;
 
 export type SocketMsgType = {e: string, d: any};
 
+//LiteServerClient , LiteClient的基类
 export abstract class LiteSocket {
 	name: string;
 	logger: LiteLogger;
@@ -65,7 +66,7 @@ export abstract class LiteSocket {
 	wsSend(s: string) {
 		this.ws?.send(s);
 	}
-	// 主动发起断线, 一般只用于调试
+
 	disconnect(code: SocketCloseCode = SocketCloseCode.disconnect, reason?: string) {
 		this.close(code, reason);
 	}
@@ -150,14 +151,14 @@ export abstract class LiteSocket {
 			return;
 		}
 		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) ||
-			typeof parsed.e !== 'string' || parsed.e.length === 0 || !this.isValidSystemMessage(parsed)) {
+			typeof parsed.e !== 'string' || parsed.e.length === 0 || !this.isValidMessage(parsed)) {
 			this.emitEvent('exception', msgInvalidPacket);
 			return;
 		}
 		return parsed;
 	}
 
-	private isValidSystemMessage(parsed: SocketMsgType): boolean {
+	private isValidMessage(parsed: SocketMsgType): boolean {
 		const data = parsed.d;
 		switch (parsed.e) {
 			case 'ping':
@@ -168,9 +169,25 @@ export abstract class LiteSocket {
 			case 'system':
 				return !!data && typeof data === 'object' && !Array.isArray(data) &&
 					[data.id, data.maxSendLen, data.maxRecvLen].every(value => Number.isSafeInteger(value) && value > 0);
+			case NetEventEnum.eventCallbacked:
+				return Array.isArray(data) && data.length === 2 && Number.isSafeInteger(data[0]) && data[0] >= 0 &&
+					Array.isArray(data[1]) && Number.isSafeInteger(data[1][0]) && data[1][0] >= 0;
+			case NetEventEnum.eventCallback:
+			case NetEventEnum.eventGateCallback:
+				return this.isValidMessageArray(data) && data.length >= 2 &&
+					Number.isSafeInteger(data[data.length - 1]) && data[data.length - 1] >= 0;
+			case NetEventEnum.eventMod:
+			case NetEventEnum.eventBc:
+			case NetEventEnum.eventGate:
+			case NetEventEnum.eventGateMod:
+				return this.isValidMessageArray(data);
 			default:
 				return true;
 		}
+	}
+
+	private isValidMessageArray(data: unknown): data is msgData {
+		return Array.isArray(data) && Number.isSafeInteger(data[0]) && data[0] > 0;
 	}
 
 	logHead(func: string, logtype?: string) {
@@ -192,20 +209,20 @@ export abstract class LiteSocket {
 			msg = LiteSocket.encodeMessage(event, data);
 		} catch (err) {
 			this.logger.error(this.logHead('emit', 'error'), 'error:', err instanceof Error ? err.message : String(err));
-			this.emitEvent('exception', msgJsonStringError, { e: event, d:data, error: err });
+			this.emitEvent('exception', msgJsonStringError, { eventName: event, data, error: err });
 			return false;
 		}
 		const maxSendLen = this.getMaxSendLen();
 		if (msg.length >= maxSendLen) {
 			this.logger.error(this.logHead('emit', 'error'), msgSendMax, msg.length, '>=', maxSendLen);
-			this.emitEvent('exception', msgSendMax, { e: event, d:data });
+			this.emitEvent('exception', msgSendMax, { eventName: event, data });
 			return false;
 		}
 		try {
 			this.ws.send(msg);
 		} catch (err) {
 			this.logger.error(this.logHead('emit', 'error'), 'error:', err instanceof Error ? err.message : String(err));
-			this.emitEvent('exception', msgSendError, { e: event, d:data, error: err });
+			this.emitEvent('exception', msgSendError, { eventName: event, data, error: err });
 			return false;
 		}
 		return true;

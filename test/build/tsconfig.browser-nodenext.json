@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.browser-types.json",
+  "compilerOptions": {
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext"
+  },
+  "files": ["browser-nodenext-types.mts"]
+}

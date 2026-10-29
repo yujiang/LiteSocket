@@ -12,10 +12,15 @@ import { NetEventEnum, MsgId } from "./msgid";
 import { TypeHandle } from "./TypeHandle";
 import { LiteServerClient } from "./LiteServerClient";
 import { IOServerSocket } from "./IOServerSocket";
-import { ErrorEnum, EventReturn } from "./ErrorEnum";
+import { ErrorEnum, EventReturn, FirstErrorRt } from "./ErrorEnum";
 
 export type LiteMessageSocketHandler = (arg0: IOServerSocket, ...arg1: any[]) => void;
 export type LiteCallbackSocketHandler = (arg0: IOServerSocket, ...arg1: any[]) => EventReturn;
+
+export interface ServerParam {
+    checktimeout?: boolean; // 默认 false
+    checkIntervalMs?: number; // 默认 1000
+}
 
 export class IOServerBase {
     constructor(name: string, logger: LiteLogger) {
@@ -80,10 +85,30 @@ export class IOServer extends IOServerBase {
     handle: TypeHandle;
     modHandle: MsgHandle;
     cbHandle: MsgHandleCB;
+    param: ServerParam;
+    private checkTimer?: ReturnType<typeof setInterval>;
 
-    constructor(name: string, logger: LiteLogger) {
+    constructor(name: string, logger: LiteLogger, param: ServerParam = {}) {
         super(name, logger);
+        this.param = param;
         this.createHandle();
+    }
+
+    override async listen(port: number, opts: LiteOptionsInput = {}): Promise<ListenResult> {
+        const result = await super.listen(port, opts);
+        if (result[0] && this.param.checktimeout) {
+            const configuredInterval = this.param.checkIntervalMs;
+            const interval = Number.isFinite(configuredInterval) && configuredInterval > 0 ? configuredInterval : 1000;
+            // 所有连接共用一个超时检查器，避免为每个 socket 创建定时器。
+            this.checkTimer = setInterval(() => {
+                const now = Date.now();
+                for (const socket of this.io?.clients.values() ?? []) {
+                    if (socket instanceof IOServerSocket) socket.session?.checkTimeout(now);
+                }
+            }, interval);
+            this.checkTimer.unref();
+        }
+        return result;
     }
 
     createHandle(): void {
@@ -99,22 +124,6 @@ export class IOServer extends IOServerBase {
             }
         );
     }
-
-    // roomMessage() {
-    //     this.onMessage(
-    //         MsgId.MSG_C2S_ROOM_OP,
-    //         (socket:IOServerSocket, op: string, room: string) => {
-    //             this.io.opRoom(op, room, socket);
-    //         }
-    //     )
-
-    //     this.onMessage(
-    //         MsgId.MSG_C2S_ROOM_BC,
-    //         (socket:IOServerSocket, room: string, msg: msgData) => {
-    //             this.bc(room, msg);
-    //         }
-    //     )
-    // }
 
     protected override configureServer(server: LiteServer): void {
         this.createEventMod(server);
@@ -151,12 +160,6 @@ export class IOServer extends IOServerBase {
         });
     }
 
-    // private handleLifecycle(socket: IOServerSocket, message: MsgId): void {
-    //     //if (this.modHandle.getHandle(message)) {
-    //     this.handle.handleTypeMsg(socket, NetEventEnum.eventMod, [message], false);
-    //     //}
-    // }
-
     private disconnectSocket(socket: IOServerSocket, reason: string): void {
         if (!socket.dispose(reason)) return;
         this.logger.warn(`client ${socket.id} ${getIp(socket)} disconnect for ${reason}!`);
@@ -175,6 +178,8 @@ export class IOServer extends IOServerBase {
     onClientDisconnected(socket: IOServerSocket): void {}
 
     override close(): void {
+        clearInterval(this.checkTimer);
+        this.checkTimer = undefined;
         for (const socket of Array.from(this.io?.clients.values() ?? [])) {
             if (socket instanceof IOServerSocket) this.disconnectSocket(socket, 'server close');
         }
@@ -217,9 +222,10 @@ export class IOServer extends IOServerBase {
         sock?.sendMod(type, args);
     }
 
-    async asendMod(id: number, type: string, args: msgData) {
+    async asendMod(id: number, type: string, args: msgData): Promise<FirstErrorRt> {
         const sock = this.findById(id);
-        return sock?.asendMod(type, args);
+        if (!sock) return [ErrorEnum.Net_notconnect, null];
+        return sock.asendMod(type, args);
     }
 }
 

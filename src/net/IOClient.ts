@@ -154,7 +154,7 @@ export class IOClient {
         this.send(args);
     }
 
-    asendMsg(...args: msgData) {
+    asendCallback(...args: msgData) {
         return this.asend(args);
     }
 

@@ -27,8 +27,8 @@ export class GateServer {
     id: number;
     constructor(id: number, loggerClients: LiteLogger, loggerGames: LiteLogger){
         this.id = id;
-        this.clients = new GateClients("GateClients"+id, loggerClients);
-        this.games = new GateGames("GateGames"+id, loggerGames);
+        this.clients = new GateClients("GateClients"+id, loggerClients, { checktimeout: true });
+        this.games = new GateGames("GateGames"+id, loggerGames, { checktimeout: true });
         this.games.route = this.clients;
         this.clients.route = this.games;
 
@@ -59,7 +59,7 @@ export class GateServer {
             MsgId.MSG_C2S_ROOM_OP,
             (socket:IOServerSocket, op: string, room: string, clientid: number) => {
                 const custom: GameData = socket.customData;                
-                const sroom = custom.gameid + room;
+                const sroom = `${custom.gameid}:${room}`;
                 this.clients.io.opRoomId(op, sroom, clientid);
             }
         )
@@ -68,7 +68,7 @@ export class GateServer {
             MsgId.MSG_C2S_ROOM_BC,
             (socket:IOServerSocket, room: string, msg: msgData) => {
                 const custom: GameData = socket.customData;                
-                const sroom = custom.gameid + room;
+                const sroom = `${custom.gameid}:${room}`;
                 this.clients.bc(sroom, msg);
             }
         )
@@ -112,7 +112,7 @@ export class GateServer {
                 if (!custom.logined) {
                     return [ErrorEnum.ErrorError, "not login"]
                 }
-                if (custom.gameid){
+                if (custom.gameid || custom.entering){
                     return [ErrorEnum.ErrorError, "already in game"]
                 }
                 if (!Number.isSafeInteger(playerid) || playerid <= 0) {
@@ -122,28 +122,34 @@ export class GateServer {
                 if (!game){
                     return [ErrorEnum.ErrorError, "game not found"]
                 }
-                const rt = await game.asendMod(
-                    NetEventEnum.eventCallback, 
-                    [MsgGameGateEnum.gate2game_entergame, socket.id, playerid], 
-                    5000);
-                if (rt[0] !== ErrorEnum.ErrorOk){
-                    return rt;
+                custom.entering = true;
+                try {
+                    const rt = await game.asendMod(
+                        NetEventEnum.eventCallback,
+                        [MsgGameGateEnum.gate2game_entergame, socket.id, playerid],
+                        5000);
+                    if (rt[0] !== ErrorEnum.ErrorOk){
+                        return rt;
+                    }
+                    // 进入游戏期间可能断线，此时断线回调还不知道玩家已进入游戏。
+                    if (!socket.connected) {
+                        game.sendMsg(MsgGameGateEnum.gate2game_disconnect, socket.id);
+                        return [ErrorEnum.Callback_disconnect];
+                    }
+                    custom.gameid = gameid;
+                    custom.playerid = playerid;
+                    console.log(`[gate] game ${gameid} client ${socket.id} enter:`, playerid);
+                    return [ErrorEnum.ErrorOk];
+                } finally {
+                    custom.entering = false;
                 }
-                // 进入游戏期间可能断线，此时断线回调还不知道玩家已进入游戏。
-                if (!socket.connected) {
-                    game.sendMsg(MsgGameGateEnum.gate2game_disconnect, socket.id);
-                    return [ErrorEnum.Callback_disconnect];
-                }
-                custom.gameid = gameid;
-                custom.playerid = playerid;
-                console.log(`[gate] game ${gameid} client ${socket.id} enter:`, playerid);
-                return [ErrorEnum.ErrorOk];
             }
         )
 
         this.clients.onCallback(MsgClientEnum.gate_exit, 
             async (socket:IOServerSocket) => {
                 const custom: ClientData = socket.customData;                
+                if (custom.entering) return [ErrorEnum.ErrorError, "entering game"];
                 if (!custom.logined) {
                     return [ErrorEnum.ErrorOk];
                 }
@@ -159,15 +165,11 @@ export class GateServer {
                     custom.playerid = 0;
                     return [ErrorEnum.ErrorOk];
                 }
-                const rt = await game.asendMod(
-                    NetEventEnum.eventCallback, 
-                    [MsgGameGateEnum.gate2game_exit, socket.id], 
-                    5000);
+                const rt = await game.asendCallback(MsgGameGateEnum.gate2game_exit, socket.id);
                 if (rt[0] !== ErrorEnum.ErrorOk){
                     return rt;
                 }
                 custom.exit("gate_exit");
-                // socket.disconnect(); 不行，否则消息无法收到了
                 return [ErrorEnum.ErrorOk];
             }
         )

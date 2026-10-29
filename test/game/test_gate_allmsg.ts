@@ -42,8 +42,23 @@ test('game message enums are exercised through the gate', async context => {
 
     const chat = deferred<[number, string]>();
     client2.onMessage(MsgClientEnum.c_chat, (playerid: number, message: string) => chat.resolve([playerid, message]));
-    assert.deepStrictEqual(await within(client1.chat(456, 'all messages'), 'game_chat'), [ErrorEnum.ErrorOk]);
+    assert.deepStrictEqual(await within(client1.chatDes(456, 'all messages'), 'game_chat'), [ErrorEnum.ErrorOk]);
     assert.deepStrictEqual(await within(chat.promise, 'c_chat delivery'), [123, 'all messages']);
+
+    const broadcasts = [client1, client2, client3].map(() => [] as Array<[number, string]>);
+    for (const [index, client] of [client1, client2, client3].entries()) {
+        client.onBroadcast(MsgClientEnum.bc_chat, (playerid: number, message: string) => {
+            broadcasts[index].push([playerid, message]);
+        });
+    }
+    assert.deepStrictEqual(await within(client1.bcChat('world chat'), 'game_bcchat'), [ErrorEnum.ErrorOk]);
+    await waitUntil(() => broadcasts[0].length === 1 && broadcasts[1].length === 1, 'bc_chat delivery');
+    const barrier = deferred<void>();
+    client3.socket.on('broadcast-barrier', () => barrier.resolve());
+    gate.clients.findById(client3.getSocketId()).emit('broadcast-barrier');
+    await within(barrier.promise, 'non-member broadcast barrier');
+    assert.deepStrictEqual(broadcasts, [[[123, 'world chat']], [[123, 'world chat']], []]);
+    assert.equal(gate.clients.io.getRoom(`${game.id}:world`)?.size(), 2);
 
     const disconnectedClientId = client1.getSocketId();
     client1.destroy('test disconnect');
@@ -72,14 +87,14 @@ test('game message enums are exercised through the gate', async context => {
     // Keep the explicit message-name lists in sync when protocol messages are added.
     assert.deepStrictEqual(
         Object.entries(MsgGameGateEnum)
-            .filter(([name, value]) => typeof value === 'number' && name !== 'Max')
+            .filter(([name, value]) => typeof value === 'number' && !['Max', 'start', 'end'].includes(name))
             .map(([name]) => name),
         ['game2gate_info', 'gate2game_entergame', 'gate2game_exit', 'gate2game_disconnect', 'game2gate_exit'],
     );
     assert.deepStrictEqual(
         Object.entries(MsgClientEnum)
-            .filter(([name, value]) => typeof value === 'number' && name !== 'Max')
+            .filter(([name, value]) => typeof value === 'number' && !['Max', 'start', 'end'].includes(name))
             .map(([name]) => name),
-        ['gate_login', 'gate_entergame', 'game_chat', 'gate_exit', 'c_chat'],
+        ['gate_login', 'gate_entergame', 'gate_exit', 'game_chat', 'game_bcchat', 'c_chat', 'bc_chat'],
     );
 });

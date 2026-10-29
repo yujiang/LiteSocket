@@ -11,9 +11,10 @@ export class ClientData {
 	logined = false;
 	gameid = 0;
 	playerid = 0;
+	entering = false;
     exit(reason: string) {
         // console.log("ClientData.exit", this.gameid, this.playerid, reason)
-        console.log(`[gate] game ${this.gameid} exit`, this.playerid);
+        console.log(`[gate] game ${this.gameid} exit`, this.playerid, reason);
         this.logined = false;
         this.gameid = 0;
 	    this.playerid = 0;
@@ -44,7 +45,6 @@ export class GateClients extends IOServer {
 		}
 	}
     
-
     // 改变了常规的流程
     bindRoute(socket: IOServerSocket): void {
 		const msgs = [NetEventEnum.eventMod, NetEventEnum.eventCallback];
@@ -96,7 +96,6 @@ export class GateClients extends IOServer {
 	}
 
 	sendCbNum = 0;
-
 	onSendCallback() {
 		this.sendCbNum++;
 		if (this.sendCbNum % W10 === 0) {

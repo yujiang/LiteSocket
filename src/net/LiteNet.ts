@@ -1,13 +1,8 @@
 // LiteNet.ts
 // 提供公共的结构
 
-import { colors } from "../public/color";
-
 // import * as chalk from 'chalk';
-
-// 必须return void
-// export type LiteMessageHandler<Handler extends (...args: any[]) => unknown> = Handler &
-// 	([Awaited<ReturnType<Handler>>] extends [void] ? unknown : never);
+import { colors } from "../public/color";
 
 export interface SocketSysMessage {
 	id: number;

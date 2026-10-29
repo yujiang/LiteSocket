@@ -206,3 +206,45 @@ test('close inside reconnect callback prevents the retry', async context => {
     assert.equal(client.events.count('connect_fail'), 1);
     assert.equal(client.events.count('reconnect_fail'), 0);
 });
+
+test('cancelReconnect stops backoff without clearing handlers and allows manual connection', async context => {
+    const failed = await unusedAddress(context);
+    const { url } = await createLiteServer(context);
+    const client = createClient(context, { backoff: { baseMs: 100, maxMs: 100 } });
+    await client.connectPromise(failed.url);
+    await client.events.waitForCount('reconnect', 1);
+    client.cancelReconnect();
+    client.cancelReconnect();
+    assert.equal(client.getOpts().autoReconnect, false);
+    await delay(150);
+    assert.equal(client.events.count('reconnect'), 1);
+    assert.equal(client.events.count('reconnect_fail'), 0);
+    assert.deepStrictEqual(await client.connectPromise(url), [true, '']);
+    assert.equal(client.events.count('connect'), 1);
+});
+
+test('cancelReconnect keeps a healthy connection until it disconnects', async context => {
+    const { server, url } = await createLiteServer(context);
+    const client = createClient(context);
+    await client.connectPromise(url);
+    client.cancelReconnect();
+    assert(client.connected);
+    assert.equal(server.clientsNum(), 1);
+    server.findById(client.getServerId()).terminate();
+    await client.events.waitForCount('close', 1);
+    await delay(100);
+    assert.equal(client.events.count('disconnect'), 1);
+    assert.equal(client.events.count('reconnect'), 0);
+});
+
+test('disconnect during backoff cancels retries even when the old socket is already closed', async context => {
+    const { url } = await unusedAddress(context);
+    const client = createClient(context, { backoff: { baseMs: 100, maxMs: 100 } });
+    await client.connectPromise(url);
+    await client.events.waitForCount('close', 1);
+    client.disconnect();
+    await delay(150);
+    assert.equal(client.getOpts().autoReconnect, false);
+    assert.equal(client.events.count('connect_fail'), 1);
+    assert.equal(client.events.count('reconnect_fail'), 0);
+});

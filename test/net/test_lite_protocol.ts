@@ -20,6 +20,29 @@ import { connect, createClient, createLiteServer, waitUntil } from '../lite_test
 const maxSendLen = 1024;
 const maxRecvLen = 256;
 
+test('wire format uses e/d while preserving nested numeric message arrays', () => {
+    const packet = { e: 'mod', d: [910204, '中文', { nested: [1, 2] }] };
+    assert.equal(LiteSocket.encodeMessage(packet.e, packet.d), JSON.stringify(packet));
+    assert.deepStrictEqual(LiteSocket.decodeMessage(JSON.stringify(packet)), packet);
+});
+
+test('custom event names do not accidentally invoke Object.prototype properties', async context => {
+    const { server, client, peer, serverMessages, clientMessages } = await createConnection(context);
+    client.emit('__proto__', 'unregistered');
+    peer.emit('__proto__', 'unregistered');
+    client.emit('payload', 'barrier');
+    peer.emit('payload', 'barrier');
+    await waitUntil(() => serverMessages.length === 1 && clientMessages.length === 1, 'unknown event barrier');
+    const received: string[] = [];
+    server.onMessage('__proto__', (_socket, data) => received.push(`server:${data}`));
+    client.on('__proto__', data => received.push(`client:${data}`));
+    client.emit('__proto__', 'registered');
+    peer.emit('__proto__', 'registered');
+    await waitUntil(() => received.length === 2, 'custom prototype names');
+    assert.deepStrictEqual(received.sort(), ['client:registered', 'server:registered']);
+    assert(client.connected && peer.connected);
+});
+
 // 建立一对真实连接，等待 system 消息，并分别记录两端的网络事件和 payload 业务消息。
 // client 是主动连接的客户端，peer 是服务器内部对应的 LiteClient；测试结束会自动清理。
 async function createConnection(
@@ -202,13 +225,15 @@ for (const packetLength of [maxSendLen - 1, maxSendLen, maxSendLen + 1]) {
             server.joinRoom('packet-limits', peer);
             const room = server.getRoom('packet-limits');
             assert(room);
-            const send = (data: string) => target === 'server'
+            const send = (data: [number, string]) => target === 'server'
                 ? server.broadcast('payload', data) : room.broadcast('payload', data);
-            const payload = sizedPayload(packetLength);
+            const payload: [number, string] = [1, 'x'.repeat(packetLength - LiteSocket.encodeMessage('payload', [1, '']).length)];
+            assert.equal(LiteSocket.encodeMessage('payload', payload).length, packetLength);
+            const barrier: [number, string] = [1, 'barrier'];
             send(payload);
-            send('barrier');
-            await waitUntil(() => clientMessages.includes('barrier'), 'message after broadcast size check');
-            assert.deepStrictEqual(clientMessages, packetLength < maxSendLen ? [payload, 'barrier'] : ['barrier']);
+            send(barrier);
+            await waitUntil(() => clientMessages.some(data => data[1] === 'barrier'), 'message after broadcast size check');
+            assert.deepStrictEqual(clientMessages, packetLength < maxSendLen ? [payload, barrier] : [barrier]);
             assert.equal(clientEvents.filter(entry => entry.event === 'exception').length, 0);
             assert.deepStrictEqual(broadcastExceptions, packetLength < maxSendLen ? [] : [{
                 reason: msgSendMax,

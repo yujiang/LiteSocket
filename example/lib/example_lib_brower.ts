@@ -49,7 +49,7 @@ connectButton.addEventListener('click', async () => {
 
 helloButton.addEventListener('click', () => client.sendMsg(Message.Hello, 'browser'));
 addButton.addEventListener('click', async () => {
-    const [code, sum] = await client.asendMsg(Message.Add, 3, 5);
+    const [code, sum] = await client.asendCallback(Message.Add, 3, 5);
     write(code === ErrorEnum.ErrorOk ? `RPC result: ${sum}` : `RPC failed: ${code}`);
 });
 

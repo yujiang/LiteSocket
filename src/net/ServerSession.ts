@@ -35,14 +35,3 @@ export class ServerSession extends SessionCallback {
 		this.sock.emit(mod, msg);
 	}
 }
-
-// export async function asendSock(
-// 	sock: HttpSocket,
-// 	data: msgData,
-// 	timeout = 0,
-// ) {
-// 	if (sock.cb) {
-// 		return sock.cb.asendSession(NetEventEnum.eventCallback, data, timeout);
-// 	}
-// 	return [ErrorEnum.Callback_not_find, null];
-// }

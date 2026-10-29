@@ -6,6 +6,7 @@ const client = new LiteClient('browser', createSliceLogger(), {
 });
 client.onEvent('connect', () => client.emit('hello', 'browser'));
 client.close(SocketCloseCode.normal);
+client.cancelReconnect();
 const sent: boolean = client.emitMsg(950003, 'payload');
 void sent;
 const rpc = new IOClient('rpc', console, { checktimeout: true });
@@ -15,4 +16,7 @@ rpc.sendMsg('1', 'browser');
 // @ts-expect-error 打包后的声明仍要求至少一个参数。
 rpc.sendMsg();
 const result: Promise<ErrorEnum> = rpc.asende([1]);
+rpc.onCallback(2, (name: string) => [ErrorEnum.ErrorOk, name]);
+// @ts-expect-error RPC 必须返回错误码或结果元组。
+rpc.onCallback(3, () => 'invalid');
 void result;

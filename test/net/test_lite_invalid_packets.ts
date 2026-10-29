@@ -5,14 +5,18 @@ import { WebSocketServer } from 'ws';
 import { createClient, createLiteServer, connect, waitUntil, within } from '../lite_test_helpers';
 
 const invalidPackets = [
-    null, [], 1, 'text', {}, { data: 1 }, { eventName: 1 }, { eventName: '' },
-    { eventName: 'system', data: null },
-    { eventName: 'system', data: { id: '1', maxSendLen: 256, maxRecvLen: 256 } },
-    { eventName: 'system', data: { id: 1, maxSendLen: 0, maxRecvLen: 256 } },
-    { eventName: 'system', data: { id: 1, maxSendLen: 256 } },
-    { eventName: 'ping', data: null }, { eventName: 'ping', data: 'time' },
-    { eventName: 'pong', data: null }, { eventName: 'pong', data: [] },
-    { eventName: 'pong', data: [1, 'time'] }, { eventName: 'pong', data: [1, 2, 3] },
+    null, [], 1, 'text', {}, { d: 1 }, { e: 1 }, { e: '' },
+    { e: 'system', d: null },
+    { e: 'system', d: { id: '1', maxSendLen: 256, maxRecvLen: 256 } },
+    { e: 'system', d: { id: 1, maxSendLen: 0, maxRecvLen: 256 } },
+    { e: 'system', d: { id: 1, maxSendLen: 256 } },
+    { e: 'ping', d: null }, { e: 'ping', d: 'time' },
+    { e: 'pong', d: null }, { e: 'pong', d: [] },
+    { e: 'pong', d: [1, 'time'] }, { e: 'pong', d: [1, 2, 3] },
+    ...['mod', 'bc', 'g', 'gmod', 'cb', 'gcb'].flatMap(e =>
+        [null, {}, 'text', [], ['1'], [0], [-1], [1.5]].map(d => ({ e, d }))),
+    ...['cb', 'gcb'].flatMap(e => [[1], [1, 'session'], [1, -1], [1, 1.5]].map(d => ({ e, d }))),
+    ...[null, {}, [], ['1', [0]], [-1, [0]], [1, null], [1, []], [1, ['0']]].map(d => ({ e: 'cb2', d })),
 ];
 
 // JSON 可以解析并不代表是合法协议包；两端都应报告 exception，且不影响紧随其后的正常消息。
@@ -61,13 +65,13 @@ test('invalid initial system packets cannot mark a client as connected', async c
     const [socket] = await accepted;
     let checkpoint = false;
     client.on('checkpoint', () => { checkpoint = true; });
-    socket.send(JSON.stringify({ eventName: 'system', data: null }));
-    socket.send(JSON.stringify({ eventName: 'checkpoint' }));
+    socket.send(JSON.stringify({ e: 'system', d: null }));
+    socket.send(JSON.stringify({ e: 'checkpoint' }));
     await waitUntil(() => checkpoint, 'invalid system processed');
     assert.equal(client.connected, false);
     assert.equal(client.getSys(), undefined);
     assert.equal(client.events.count('exception'), 1);
-    socket.send(JSON.stringify({ eventName: 'system', data: { id: 7, maxSendLen: 256, maxRecvLen: 256 } }));
+    socket.send(JSON.stringify({ e: 'system', d: { id: 7, maxSendLen: 256, maxRecvLen: 256 } }));
     assert.deepStrictEqual(await within(connecting, 'valid system after invalid one'), [true, '']);
     assert.equal(client.getServerId(), 7);
 });

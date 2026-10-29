@@ -23,7 +23,7 @@ test('connected getter follows protocol readiness and disconnect state', async c
     const [socket] = await within(accepted, 'accepted before system');
     await waitUntil(() => client.ws.readyState === WebSocket.OPEN, 'transport open');
     assert.equal(client.connected, false);
-    socket.send(JSON.stringify({ eventName: 'system', data: {
+    socket.send(JSON.stringify({ e: 'system', d: {
         id: 7, maxSendLen: 1024, maxRecvLen: 1024,
     } }));
     assert.deepStrictEqual(await within(connecting, 'protocol ready'), [true, '']);
@@ -123,7 +123,7 @@ test('connectPromise waits for system and exposes initialized state immediately'
     const sys = { id: 7, maxSendLen: 128, maxRecvLen: 512 };
     let stateAtConnect: typeof sys;
     client.onEvent('connect', () => { stateAtConnect = client.getSys(); });
-    socket.send(JSON.stringify({ eventName: 'system', data: sys }));
+    socket.send(JSON.stringify({ e: 'system', d: sys }));
     assert.deepStrictEqual(await within(first, 'system initializes connection'), [true, '']);
     assert.deepStrictEqual(await second, [true, '']);
     assert.deepStrictEqual(stateAtConnect, sys);
@@ -137,12 +137,12 @@ test('connectPromise waits for system and exposes initialized state immediately'
     const received = once(socket, 'message');
     client.emit('probe', 'ready');
     const [data] = await within(received, 'send immediately after connectPromise');
-    assert.deepStrictEqual(JSON.parse(data.toString()), { eventName: 'probe', data: 'ready' });
+    assert.deepStrictEqual(JSON.parse(data.toString()), { e: 'probe', d: 'ready' });
     // 重复 system 不能重复发 connect，也不能覆盖首次初始化的配置；用后续消息确认已处理完。
     let checked = false;
     client.on('checked', () => { checked = true; });
-    socket.send(JSON.stringify({ eventName: 'system', data: { id: 99, maxSendLen: 1, maxRecvLen: 1 } }));
-    socket.send(JSON.stringify({ eventName: 'checked' }));
+    socket.send(JSON.stringify({ e: 'system', d: { id: 99, maxSendLen: 1, maxRecvLen: 1 } }));
+    socket.send(JSON.stringify({ e: 'checked' }));
     await waitUntil(() => checked, 'duplicate system handled');
     assert.deepStrictEqual(client.events.names(), ['connect']);
     assert.deepStrictEqual(client.getSys(), sys);
@@ -162,7 +162,7 @@ test('missing system times out after WebSocket opens', async context => {
     onMessage.call(client.ws, {
         type: 'message',
         target: client.ws,
-        data: JSON.stringify({ eventName: 'system', data: {
+        data: JSON.stringify({ e: 'system', d: {
             id: 9, maxSendLen: 1024, maxRecvLen: 1024,
         } }),
     });
@@ -210,7 +210,7 @@ test('switching URLs while waiting for system cancels the old initialization', a
     oldMessage.call(oldSocket, {
         type: 'message',
         target: oldSocket,
-        data: JSON.stringify({ eventName: 'system', data: {
+        data: JSON.stringify({ e: 'system', d: {
             id: 999, maxSendLen: 1, maxRecvLen: 1,
         } }),
     });
@@ -366,7 +366,7 @@ test('switching URLs cancels the previous attempt and ignores its late callbacks
     onMessage.call(oldSocket, {
         type: 'message',
         target: oldSocket,
-        data: JSON.stringify({ eventName: 'system', data: { id: 999, maxSendLen: 1, maxRecvLen: 1 } }),
+        data: JSON.stringify({ e: 'system', d: { id: 999, maxSendLen: 1, maxRecvLen: 1 } }),
     });
     assert(client.isConnecting());
     assert(client.timeoutHandle);

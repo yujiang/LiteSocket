@@ -126,7 +126,7 @@ export abstract class SessionCallback {
 		let num = 0;
 		for (const [id, data] of Object.entries(this.callbacks)) {
 			// 4 timeout 3 timesend
-			const timeout = data[4] || this.timeoutMax; //默认 10秒
+			const timeout = data[4] || this.timeoutMax; // 默认 100 秒；timeoutMax 的单位为毫秒
 			if (now - data[3] > timeout) {
 				this.onTimeout(data, timeout);
 				this.onSessionCallback(Number(id), [ErrorEnum.Callback_timeout]);

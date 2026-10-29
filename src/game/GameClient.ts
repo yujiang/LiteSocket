@@ -27,7 +27,7 @@ export class GameClient extends IOClient{
     }
 
     async bcChat(msg: string){
-        const rt = await this.asendMsg(MsgClientEnum.game_bcchat, msg);
+        const rt = await this.asendCallback(MsgClientEnum.game_bcchat, msg);
         if (rt[0] == ErrorEnum.ErrorOk){
             // .. nothing            
         }
@@ -38,7 +38,7 @@ export class GameClient extends IOClient{
     }
     
     async chatDes(desid: number, msg: string){
-        const rt = await this.asendMsg(MsgClientEnum.game_chat,desid, msg);
+        const rt = await this.asendCallback(MsgClientEnum.game_chat,desid, msg);
         if (rt[0] == ErrorEnum.ErrorOk){
             // .. nothing            
         }

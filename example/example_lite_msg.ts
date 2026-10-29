@@ -72,13 +72,13 @@ async function example() {
         await helloReply;
 
         // asend 不需要注册返回消息，直接 await 获取服务端返回的结果。
-        const [code, sum] = await client.asendMsg(myMsg.c2s_rpc_addMessage, 3, 5);
+        const [code, sum] = await client.asendCallback(myMsg.c2s_rpc_addMessage, 3, 5);
         if (code !== ErrorEnum.ErrorOk || sum !== 8) throw new Error(`RPC 失败：${code}`);
         console.log('客户端 await asend c2s_rpc_addMessage 得到结果：', sum);
 
         const sc = server.findById(connectid);
         assert(sc);
-        const [code2, sum2] = await sc.asendMsg(myMsg.s2c_rpc_mulMessage, 3, 5);
+        const [code2, sum2] = await sc.asendCallback(myMsg.s2c_rpc_mulMessage, 3, 5);
         if (code2 !== ErrorEnum.ErrorOk || sum2 !== 15) {
             throw new Error(`RPC2 结果不符合预期：${sum2}`);
         }

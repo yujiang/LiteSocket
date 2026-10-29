@@ -3,6 +3,7 @@
 import { strict as assert } from 'node:assert';
 import { once } from 'node:events';
 import { test, TestContext } from 'node:test';
+import type { msgData } from '../../src/public/Depends';
 import { RoomManager } from '../../src/net/LiteRoom';
 import {
     connect, createClient, createLiteServer, LiteServerTest,
@@ -13,7 +14,7 @@ async function createRoomClients(context: TestContext, count = 3) {
     const { server, url } = await createLiteServer(context);
     const members = await Promise.all(Array.from({ length: count }, async () => {
         const client = createClient(context);
-        const messages: string[] = [];
+        const messages: msgData[] = [];
         const barriers: number[] = [];
         client.on('room-message', data => messages.push(data));
         client.on('barrier', data => barriers.push(data));
@@ -39,6 +40,28 @@ async function waitForClosed(server: LiteServerTest, client: LiteClientTest, ser
         server.events.waitForCount('client-close', serverCloseCount),
     ]);
 }
+
+test('room operations support sockets and client IDs', async context => {
+    const { server, members: [first, second] } = await createRoomClients(context, 2);
+    server.opRoom('join', 'main', first.peer);
+    server.opRoomId('join', 'main', second.peer.id);
+    server.opRoomId('join', 'main', second.peer.id);
+    assert.equal(server.getRoom('main').size(), 2);
+    server.opRoomId('leave', 'main', first.peer.id);
+    assert.deepStrictEqual(Array.from(server.getRoom('main').getClients()), [second.peer]);
+    server.opRoom('leave', 'main', second.peer);
+    assert.equal(server.getRoom('main'), undefined);
+    server.opRoomId('join', 'main', first.peer.id);
+    server.opRoomId('dismiss', 'main', 999999);
+    assert.equal(server.getRoom('main'), undefined);
+    server.opRoom('join', 'main', first.peer);
+    server.opRoom('dismiss', 'main', first.peer);
+    assert.equal(server.getRoom('main'), undefined);
+    server.opRoomId('join', 'missing', 999999);
+    server.opRoomId('unknown', 'missing', first.peer.id);
+    server.opRoom('unknown', 'missing', first.peer);
+    assert.equal(server.getRoom('missing'), undefined);
+});
 
 // 查询、离开或解散一个不存在的房间，都不应自动创建房间，也不应影响已有连接。
 test('operations on missing rooms do not create rooms', async context => {
@@ -106,10 +129,10 @@ test('room broadcast reaches each member once and excludes outsiders', async con
     server.joinRoom('main', first.peer);
     server.joinRoom('main', first.peer);
     server.joinRoom('main', second.peer);
-    server.getRoom('main').broadcast('room-message', 'main');
+    server.getRoom('main').broadcast('room-message', [1, 'main']);
     await flushMessages(server, members);
-    assert.deepStrictEqual(first.messages, ['main']);
-    assert.deepStrictEqual(second.messages, ['main']);
+    assert.deepStrictEqual(first.messages, [[1, 'main']]);
+    assert.deepStrictEqual(second.messages, [[1, 'main']]);
     assert.deepStrictEqual(outsider.messages, []);
 });
 
@@ -121,12 +144,12 @@ test('overlapping rooms broadcast independently', async context => {
     server.joinRoom('alpha', alphaOnly.peer);
     server.joinRoom('beta', shared.peer);
     server.joinRoom('beta', betaOnly.peer);
-    server.getRoom('alpha').broadcast('room-message', 'alpha');
-    server.getRoom('beta').broadcast('room-message', 'beta');
+    server.getRoom('alpha').broadcast('room-message', [1, 'alpha']);
+    server.getRoom('beta').broadcast('room-message', [1, 'beta']);
     await flushMessages(server, members);
-    assert.deepStrictEqual(shared.messages, ['alpha', 'beta']);
-    assert.deepStrictEqual(alphaOnly.messages, ['alpha']);
-    assert.deepStrictEqual(betaOnly.messages, ['beta']);
+    assert.deepStrictEqual(shared.messages, [[1, 'alpha'], [1, 'beta']]);
+    assert.deepStrictEqual(alphaOnly.messages, [[1, 'alpha']]);
+    assert.deepStrictEqual(betaOnly.messages, [[1, 'beta']]);
 });
 
 // exceptClient 指定房间成员时只排除该成员；指定房间外的客户端时，不应误排除任何成员。
@@ -136,11 +159,11 @@ test('room broadcast excludes only the specified member', async context => {
     server.joinRoom('main', first.peer);
     server.joinRoom('main', second.peer);
     const room = server.getRoom('main');
-    room.broadcast('room-message', 'except-first', first.peer);
-    room.broadcast('room-message', 'all-members', outsider.peer);
+    room.broadcast('room-message', [1, 'except-first'], first.peer);
+    room.broadcast('room-message', [1, 'all-members'], outsider.peer);
     await flushMessages(server, members);
-    assert.deepStrictEqual(first.messages, ['all-members']);
-    assert.deepStrictEqual(second.messages, ['except-first', 'all-members']);
+    assert.deepStrictEqual(first.messages, [[1, 'all-members']]);
+    assert.deepStrictEqual(second.messages, [[1, 'except-first'], [1, 'all-members']]);
     assert.deepStrictEqual(outsider.messages, []);
 });
 
@@ -152,11 +175,11 @@ test('leaving one room preserves membership in another room', async context => {
     server.joinRoom('alpha', second.peer);
     server.joinRoom('beta', first.peer);
     server.leaveRoom('alpha', first.peer);
-    server.getRoom('alpha').broadcast('room-message', 'alpha');
-    server.getRoom('beta').broadcast('room-message', 'beta');
+    server.getRoom('alpha').broadcast('room-message', [1, 'alpha']);
+    server.getRoom('beta').broadcast('room-message', [1, 'beta']);
     await flushMessages(server, members);
-    assert.deepStrictEqual(first.messages, ['beta']);
-    assert.deepStrictEqual(second.messages, ['alpha']);
+    assert.deepStrictEqual(first.messages, [[1, 'beta']]);
+    assert.deepStrictEqual(second.messages, [[1, 'alpha']]);
     assert.deepStrictEqual(outsider.messages, []);
     assert(first.client.isConnected());
 });
@@ -167,12 +190,12 @@ test('server broadcast honors its filter without restricting recipients to a roo
     const [first, second, outsider] = members;
     server.joinRoom('main', first.peer);
     server.joinRoom('main', second.peer);
-    server.broadcast('room-message', 'filtered', peer => peer.id === second.peer.id);
-    server.broadcast('room-message', 'everyone');
+    server.broadcast('room-message', [1, 'filtered'], peer => peer.id === second.peer.id);
+    server.broadcast('room-message', [1, 'everyone']);
     await flushMessages(server, members);
-    assert.deepStrictEqual(first.messages, ['everyone']);
-    assert.deepStrictEqual(second.messages, ['filtered', 'everyone']);
-    assert.deepStrictEqual(outsider.messages, ['everyone']);
+    assert.deepStrictEqual(first.messages, [[1, 'everyone']]);
+    assert.deepStrictEqual(second.messages, [[1, 'filtered'], [1, 'everyone']]);
+    assert.deepStrictEqual(outsider.messages, [[1, 'everyone']]);
 });
 
 // LiteClient.broadcastNotSelf 是全服范围的“排除自己”，不是只向自己所在的房间广播。
@@ -181,11 +204,11 @@ test('client broadcastNotSelf reaches other clients including room outsiders', a
     const [sender, sameRoom, outsider] = members;
     server.joinRoom('main', sender.peer);
     server.joinRoom('main', sameRoom.peer);
-    sender.peer.broadcastNotSelf('room-message', 'others');
+    sender.peer.broadcastNotSelf('room-message', [1, 'others']);
     await flushMessages(server, members);
     assert.deepStrictEqual(sender.messages, []);
-    assert.deepStrictEqual(sameRoom.messages, ['others']);
-    assert.deepStrictEqual(outsider.messages, ['others']);
+    assert.deepStrictEqual(sameRoom.messages, [[1, 'others']]);
+    assert.deepStrictEqual(outsider.messages, [[1, 'others']]);
 });
 
 // 解散后不能再通过服务器查询到旧房间；重新加入同名房间只包含新成员，其他房间不受影响。
@@ -203,12 +226,12 @@ test('dismissed room can be recreated without inheriting former members', async 
     const recreated = server.getRoom('main');
     assert.notEqual(recreated, original);
     assert.deepStrictEqual(Array.from(recreated.getClients()), [newcomer.peer]);
-    recreated.broadcast('room-message', 'new-main');
-    server.getRoom('other').broadcast('room-message', 'other');
+    recreated.broadcast('room-message', [1, 'new-main']);
+    server.getRoom('other').broadcast('room-message', [1, 'other']);
     await flushMessages(server, members);
-    assert.deepStrictEqual(first.messages, ['other']);
+    assert.deepStrictEqual(first.messages, [[1, 'other']]);
     assert.deepStrictEqual(second.messages, []);
-    assert.deepStrictEqual(newcomer.messages, ['new-main']);
+    assert.deepStrictEqual(newcomer.messages, [[1, 'new-main']]);
 });
 
 for (const mode of ['disconnect', 'terminate'] as const) {
@@ -232,9 +255,9 @@ for (const mode of ['disconnect', 'terminate'] as const) {
         assert(!shared.has(departing.peer));
         assert.deepStrictEqual(Array.from(shared.getClients()), [remaining.peer]);
         assert.equal(server.getRoom('remaining-only').size(), 1);
-        shared.broadcast('room-message', 'survivor');
+        shared.broadcast('room-message', [1, 'survivor']);
         await flushMessages(server, [remaining, outsider]);
-        assert.deepStrictEqual(remaining.messages, ['survivor']);
+        assert.deepStrictEqual(remaining.messages, [[1, 'survivor']]);
         assert.deepStrictEqual(outsider.messages, []);
         server.leaveRoom('shared', remaining.peer);
         assert.equal(server.getRoom('shared'), undefined);
@@ -253,10 +276,10 @@ test('broadcast skips a member whose socket is already closing', async context =
     closing.peer.disconnect();
     assert(!closing.peer.isConnected());
     assert(server.getRoom('main').has(closing.peer));
-    server.getRoom('main').broadcast('room-message', 'online-only');
+    server.getRoom('main').broadcast('room-message', [1, 'online-only']);
     await flushMessages(server, [remaining, outsider]);
     assert.equal(send.mock.callCount(), 0);
-    assert.deepStrictEqual(remaining.messages, ['online-only']);
+    assert.deepStrictEqual(remaining.messages, [[1, 'online-only']]);
     assert.deepStrictEqual(outsider.messages, []);
     await waitForClosed(server, closing.client, 1);
 });
@@ -292,7 +315,7 @@ test('room manager creates, enumerates and dismisses rooms idempotently', async 
     assert(manager.has('alpha'));
     assert(alpha.isEmpty());
     assert.deepStrictEqual(Array.from(manager.getAllRooms()), [alpha, beta]);
-    assert.doesNotThrow(() => alpha.broadcast('room-message', 'nobody'));
+    assert.doesNotThrow(() => alpha.broadcast('room-message', [1, 'nobody']));
     await flushMessages(server, members);
     assert.deepStrictEqual(members[0].messages, []);
     manager.dismiss('missing');

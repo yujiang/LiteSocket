@@ -1,6 +1,6 @@
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const { readFileSync } = require('node:fs');
+const { readFileSync, readdirSync } = require('node:fs');
 const { resolve } = require('node:path');
 const { once } = require('node:events');
 const { runInNewContext } = require('node:vm');
@@ -81,6 +81,10 @@ test('full package entry exports server and client APIs', () => {
     for (const name of ['LiteServer', 'LiteServerClient', 'IOServer', 'IOServerSocket', 'LiteRoom', 'LiteClient', 'IOClient']) {
         assert.equal(typeof full[name], 'function', name);
     }
+    for (const name of ['GameClient', 'GameServer', 'GameGate', 'GateServer', 'GateClients', 'GateGames', 'Player']) {
+        assert.equal(full[name], undefined, `${name} is example-only`);
+    }
+    assert(!readdirSync(resolve(root, 'lib/full')).includes('game'), 'game sources must not enter the published library');
 });
 
 test('browser ESM and script builds expose client APIs without server code or Node globals', async context => {
@@ -90,16 +94,17 @@ test('browser ESM and script builds expose client APIs without server code or No
         assert(api[name], name);
         assert(esm[name], name);
     }
-    for (const name of ['LiteServer', 'IOServer', 'LiteRoom', 'IOServerSocket', 'SockWrap']) {
+    for (const name of ['LiteServer', 'IOServer', 'LiteRoom', 'IOServerSocket', 'ServerSession', 'GameClient', 'GameServer', 'GateServer']) {
         assert.equal(api[name], undefined, name);
         assert.equal(esm[name], undefined, name);
     }
     assert.doesNotMatch(source, /\brequire\s*\(|node:|node_modules\/|class LiteServer\b/);
 });
 
-test('browser-only declarations compile without @types/node or ws', () => {
+for (const project of ['tsconfig.browser-types.json', 'tsconfig.browser-nodenext.json']) {
+test(`browser-only declarations compile without @types/node or ws: ${project}`, () => {
     try {
-        execFileSync(process.execPath, [resolve(root, 'node_modules/typescript/bin/tsc'), '-p', 'test/build/tsconfig.browser-types.json'], {
+        execFileSync(process.execPath, [resolve(root, 'node_modules/typescript/bin/tsc'), '-p', `test/build/${project}`], {
             cwd: root, stdio: 'pipe', encoding: 'utf8',
         });
     } catch (error) {
@@ -107,6 +112,7 @@ test('browser-only declarations compile without @types/node or ws', () => {
         assert.fail(`Browser declaration type check failed:\n${diagnostics || error.message}`);
     }
 });
+}
 
 for (const platform of ['Node.js', 'browser']) {
     test(`${platform} build exposes sendMsg and exchanges mod messages in both directions`, async context => {
@@ -142,7 +148,7 @@ test('browser client connects and receives text and binary JSON without Buffer',
     server.onMessage('hello', (peer, data) => peer.emit('reply', data));
     client.emit('hello', { text: '浏览器 hello' });
     await waitUntil(() => messages.length === 1, 'text reply');
-    server.findById(client.getServerId()).ws.send(Buffer.from(JSON.stringify({ eventName: 'reply', data: 'binary JSON' })));
+    server.findById(client.getServerId()).ws.send(Buffer.from(JSON.stringify({ e: 'reply', d: 'binary JSON' })));
     await waitUntil(() => messages.length === 2, 'binary reply');
     assert.deepEqual(plain(messages), [{ text: '浏览器 hello' }, 'binary JSON']);
     client.destroy();

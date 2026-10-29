@@ -2,7 +2,7 @@ import { strict as assert } from 'node:assert';
 import type { TestContext } from 'node:test';
 import { createLogger, Logger } from './logger_helpers';
 import { IOClient } from '../src/net/IOClient';
-import { IOServer } from '../src/net/IOServer';
+import { IOServer, ServerParam } from '../src/net/IOServer';
 import type { ClientParam } from '../src/net/ClientSession';
 import { getWsUrl, LiteOptionsInput } from '../src/net/LiteNet';
 import { within } from './lite_test_helpers';
@@ -13,14 +13,14 @@ export function createIOClient(context: TestContext, logger: Logger, param: Clie
     return client;
 }
 
-export async function createIOPair(context: TestContext, param: ClientParam = {}, opts: LiteOptionsInput = {}) {
+export async function createIOPair(context: TestContext, param: ClientParam = {}, opts: LiteOptionsInput = {}, serverParam: ServerParam = {}) {
     const logger = createLogger({ silent: true });
     const errors: unknown[][] = [];
     context.mock.method(logger, 'error', (...args: unknown[]) => {
         errors.push(args);
         return logger;
     });
-    const server = new IOServer('rpc-test-server', logger);
+    const server = new IOServer('rpc-test-server', logger, serverParam);
     const client = createIOClient(context, logger, param);
     context.after(() => {
         client.destroy('test cleanup');

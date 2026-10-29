@@ -10,6 +10,7 @@ export class GameServer{
     id: number;
     constructor(id: number, logger: LiteLogger, param: ClientParam, opts: LiteClientOptionsInput = {}){
         this.id = id;
+        opts.autoReconnect = true;
         this.gate = new GameGate("GameServer"+id, logger, param, opts);
         this.fillMessages();
     }
@@ -22,7 +23,7 @@ export class GameServer{
         const rt = await this.gate.connectServer(url, (reason: SocketReason, err?: any)=>this.onDisconnect(reason, err));
         if(!rt) return false;
         // 等 Gate 确认注册完成，再允许客户端进入游戏。
-        const registered = await this.gate.asendMsg(MsgGameGateEnum.game2gate_info, this.id);
+        const registered = await this.gate.asendCallback(MsgGameGateEnum.game2gate_info, this.id);
         return registered[0] === ErrorEnum.ErrorOk;
     }
 

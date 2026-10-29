@@ -44,7 +44,7 @@ async function main() {
         }
         tsc('tsconfig.browser.declarations.json');
         rewriteBrowserTypeImports(resolve(root, 'lib/client/types'));
-        writeFileSync('lib/client/index.d.ts', "export as namespace LiteSocket;\nexport * from './types/client';\n");
+        writeFileSync('lib/client/index.d.ts', "export as namespace LiteSocket;\nexport * from './types/client.js';\n");
         writeFileSync('lib/client/package.json', JSON.stringify({ type: 'module', main: 'index.js', types: 'index.d.ts' }, null, 2) + '\n');
         console.log('Built lib/client (browser ESM, script global LiteSocket + declarations)');
     }

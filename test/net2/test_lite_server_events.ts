@@ -246,7 +246,7 @@ for (const scope of ['server', 'room']) {
             watched.server.onEvent('exception', (reason, details) => { errors.push({ reason, details }); });
             const circular: { self?: unknown } = {};
             circular.self = circular;
-            const payload = kind === 'oversized' ? 'x'.repeat(512) : circular;
+            const payload: [number, unknown] = [1, kind === 'oversized' ? 'x'.repeat(512) : circular];
             const received: unknown[] = [];
             first.client.on('probe', data => { received.push(data); });
             second.client.on('probe', data => { received.push(data); });

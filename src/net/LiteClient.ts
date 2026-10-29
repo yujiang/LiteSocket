@@ -28,11 +28,7 @@ import {
 import { LiteLogger } from "../public/log";
 import { LiteSocket, SocketMsgType, SocketReason } from './LiteSocket';
 import { strict as assert } from 'node:assert';
-// 外部逻辑只需要'connect''disconnect','connect_fail'
-// 其他的是内部诊断用
-// 确保'disconnect'只调用一次, reason包括: error,close
-// 并且在系统事件之前调用
-//
+
 export type ClientEventFunc = (resaon: SocketReason, err?: any) => void;
 export type AllClientEventFunc = (
 	event: string,
@@ -80,16 +76,12 @@ interface ConnectAttempt {
 }
 
 export class LiteClient extends LiteSocket implements CommonClient {
-	private msgHandlers: Record<string, MsgHandleFunc> = {};
+	private msgHandlers: Record<string, MsgHandleFunc> = Object.create(null);
 	url: string;
 	private opts: LiteClientOptions;
 
 	constructor(name: string, logger: LiteLogger, opts: LiteClientOptionsInput = {}) {
 		super(name, logger);
-		// if (name instanceof LiteClient) {
-		// 	this.connectPeer(name);
-		// 	return;
-		// }
 		this.opts = {
 			heartbeatInterval: 10000,
 			heartbeatTimeout: 15000,
@@ -111,15 +103,6 @@ export class LiteClient extends LiteSocket implements CommonClient {
 		return this.opts;
 	}
 
-	// 仅仅适配SocketLinkManager
-	// private connectPeer(client: LiteClient) {
-	// 	this.name = client.name;
-	// 	this.opts = client.opts;
-	// 	this.msgHandlers = client.msgHandlers;
-	// 	this.url = client.url;
-	// 	// this.allEventFunc = client.allEventFunc;
-	// }
-
 	private attempt?: ConnectAttempt;
 	private reconnectController?: AbortController;
 	private retries = 0;
@@ -129,13 +112,18 @@ export class LiteClient extends LiteSocket implements CommonClient {
 		return this.retries;
 	}
 
-	private cancelReconnect(): void {
+	private _cancelReconnect(): void {
 		this.reconnectController?.abort();
 		this.reconnectController = undefined;
 	}
 
+	cancelReconnect() {
+		this.opts.autoReconnect = false
+		this._cancelReconnect();
+	}
+
 	private beginConnect(url: string, timeout: number): ConnectAttempt {
-		this.cancelReconnect();
+		this._cancelReconnect();
 		this.retries = 0;
 		const controller = this.opts.autoReconnect ? new AbortController() : undefined;
 		this.reconnectController = controller;
@@ -383,7 +371,7 @@ export class LiteClient extends LiteSocket implements CommonClient {
 	}
 
 	//唯一的函数, 不用Event来实现
-	private clientEventListeners: Record<string, ClientEventFunc> = {};
+	private clientEventListeners: Record<string, ClientEventFunc> = Object.create(null);
 	// 一般不用, test用
 	allEventFunc: AllClientEventFunc | undefined;
 
@@ -405,8 +393,8 @@ export class LiteClient extends LiteSocket implements CommonClient {
 	}
 
 	private clearAllEvent() {
-		this.clientEventListeners = {};
-		this.msgHandlers = {};
+		this.clientEventListeners = Object.create(null);
+		this.msgHandlers = Object.create(null);
 		this.allEventFunc = undefined;
 	}
 
@@ -500,9 +488,10 @@ export class LiteClient extends LiteSocket implements CommonClient {
 		this.closeSocket(this.ws, SocketCloseCode.normal, 'destroy');
 	}
 
-	// 主动发起断线, 关闭重连
+	// 主动发起断线, 一般只用于调试
 	override disconnect(code: SocketCloseCode = SocketCloseCode.disconnect, reason?: string) {
-		this.opts.autoReconnect = false
+		// 关闭重连
+		this.cancelReconnect();
 		super.disconnect(code, reason);
 	}
 }
