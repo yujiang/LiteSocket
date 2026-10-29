@@ -260,7 +260,7 @@ for (const { kind, reason } of exceptionCases) {
     });
 }
 
-test('onEvent replaces the previous listener and runs before allEventFunc', async context => {
+test('onEvent invokes every listener before allEventFunc', async context => {
     const { url } = await createLiteServer(context, 0, {}, createLogger());
     const { client } = watchClient(context);
     const calls: string[] = [];
@@ -268,7 +268,7 @@ test('onEvent replaces the previous listener and runs before allEventFunc', asyn
     client.onEvent('connect', () => { assert(client.connected); calls.push('new'); });
     client.allEventFunc = event => { calls.push(`all:${event}`); };
     await within(client.connectPromise(url), 'connection');
-    assert.deepStrictEqual(calls, ['new', 'all:connect']);
+    assert.deepStrictEqual(calls, ['old', 'new', 'all:connect']);
 });
 
 test('destroy cancels pending retries and removes event callbacks', async context => {

@@ -102,9 +102,11 @@ export class IOClient {
         socket.onEvent('disconnect', (reason, err) => {
             if (this.socket === socket) this.onDisconnect(reason, err);
         });
-        socket.onEvent('error', (reason, err) => this.logger.error('IOClient socket error', reason, err));
+        // 已经在litesocket logged.
+        // socket.onEvent('error', (reason, err) => this.logger.error('IOClient socket error', reason, err));
         socket.onEvent('exception', (reason, err) => {
-            this.logger.error('IOClient socket exception', reason, err);
+            // 已经在litesocket logged.
+            // this.logger.error('IOClient socket exception', reason, err);
             settleSendFailure(callback, reason, err);
         });
     }    

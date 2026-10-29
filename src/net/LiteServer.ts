@@ -13,7 +13,7 @@
 // 2. 支持 Room 概念，支持房间管理和广播
 //
 // 与 socket.io 的差异：
-// 1. 将 event 和 msg 分离，每个事件仅支持一个回调函数（不使用 Node.js EventEmitter 模式）
+// 1. 将 event 和 msg 分离，客户端网络事件通过跨平台 EventEmitter 分发
 // 2. 日志输出格式统一（通过 logHeadEx）
 // 3. 支持消息大小上限：服务器会通过 system 消息告知客户端上限，
 //    客户端若发送超过该上限的消息将被拒绝
@@ -29,6 +29,7 @@ import { LiteRoom, RoomManager } from './LiteRoom';
 import { BroadcastExceptionDetails, LiteOptions, LiteOptionsInput, logHeadEx, msgJsonStringError, msgSendMax, SocketCloseCode } from './LiteNet';
 import { LiteLogger } from "../public/log";
 import { LiteSocket, SocketReason } from './LiteSocket';
+import { EventEmitter } from './EventEmitter';
 
 
 export type clientEvent =
@@ -162,15 +163,11 @@ export class LiteServer {
 		this.emitClient('client-connect', client);
 	}
 
-	//唯一的函数, 不用Event来实现
-	private clientEventListeners: Record<string, SocketEventFunc> = Object.create(null);
-	private exceptionHandler?: ServerExceptionFunc;
+	private clientEvents = new EventEmitter<clientEvent, [client: LiteServerClient, reason?: SocketReason, err?: any]>();
+	private exceptionEvents = new EventEmitter<'exception', [reason: string, details: BroadcastExceptionDetails]>();
 
 	onEvent(event: 'exception', handler: ServerExceptionFunc): void {
-		if (this.exceptionHandler) {
-			this.logger.warn(this.logHead('onEvent', 'warn'), event, 'already registered');
-		}
-		this.exceptionHandler = handler;
+		this.exceptionEvents.on(event, handler);
 	}
 
 	encodeBroadcast(eventName: string, data: any, room?: string): string | undefined {
@@ -182,13 +179,13 @@ export class LiteServer {
 		} catch (error) {
 			details.error = error;
 			this.logger.error(this.logHead('broadcast', 'error'), msgJsonStringError, error);
-			this.exceptionHandler?.(msgJsonStringError, details);
+			this.exceptionEvents.emit('exception', msgJsonStringError, details);
 			return;
 		}
 		if (message.length >= details.limit) {
 			details.length = message.length;
 			this.logger.warn(this.logHead('broadcast', 'warn'), msgSendMax, details);
-			this.exceptionHandler?.(msgSendMax, details);
+			this.exceptionEvents.emit('exception', msgSendMax, details);
 			return;
 		}
 		return message;
@@ -201,21 +198,11 @@ export class LiteServer {
 			this.leaveAllRooms(client);
 		}
 
-		const fn = this.clientEventListeners[eventName];
-		if (fn) {
-			fn(client, reason, err);
-		}
+		this.clientEvents.emit(eventName, client, reason, err);
 	}
 
 	onClient(event: clientEvent, handler: SocketEventFunc): void {
-		const old = this.clientEventListeners[event];
-		if (old) {
-			this.logger.warn(
-				this.logHead('onClient', 'warn'),
-				`clientevent ${event} already registered`,
-			);
-		}
-		this.clientEventListeners[event] = handler;
+		this.clientEvents.on(event, handler);
 	}
 
 	broadcast(
@@ -298,8 +285,8 @@ export class LiteServer {
 		for (const socket of this.httpsSockets) socket.destroySoon();
 		this.httpsSockets.clear();
 		this.msgHandlers = Object.create(null);
-		this.clientEventListeners = Object.create(null);
-		this.exceptionHandler = undefined;
+		this.clientEvents.removeAllListeners();
+		this.exceptionEvents.removeAllListeners();
 	}
 
 	// room start...

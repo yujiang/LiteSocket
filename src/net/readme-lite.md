@@ -20,8 +20,8 @@ if (ok) {
 1. event 与 msg 分开 -- 会清晰一点
 socket.on 注册 msg的解析
 socket.onEvent 注册 socket本身事件('connect','disconnect')的解析
-2. 并没有用node:Event, 而是用callback函数
-event, msg 事件只有唯一的响应. (主要我应用中感觉一个就足够了)
+2. 网络事件与消息使用不同的注册语义
+`onEvent()` / `onClient()` 支持同一事件注册多个监听器；`on()` / `onMessage()` 每种消息只保留一个处理函数，重复注册会替换并记录提醒。
 
 ## TODO
 1. 日志级别接受定制(比如connect->warn, close->info...)

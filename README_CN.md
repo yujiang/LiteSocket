@@ -27,6 +27,7 @@ LiteSocket 的底层通信层 `LiteServer` / `LiteClient` 受到 [Socket.IO](htt
 
 - **连接流程更直接**：通过 `await connectPromise()` 等待连接结果，收到服务端 `system` 消息、完成协议初始化后才视为连接成功。
 - **区分连接事件与业务消息**：`onEvent()` 处理客户端连接生命周期，`on()` 处理业务消息；服务端使用 `onClient()` 接收连接事件。
+- **事件与消息采用不同注册语义**：`LiteClient.onEvent()`、`LiteServer.onClient()` 及服务端广播异常 `onEvent('exception')` 支持多个监听器；消息处理器（`on()` / `onMessage()`）每个事件名只保留一个，重复注册会替换并记录提醒。
 - **让请求响应贴合业务**：在 `IOServer` / `IOClient` 层使用消息 ID、session 和错误码组织 RPC，通过 `asend()` 获取结果，通过 `asende()` 只获取错误码。
 - **方便定位问题**：支持日志注入、单连接消息观察、性能统计，以及收发大小限制和异常通知。
 - **控制维护范围**：浏览器直接使用原生 WebSocket，服务端使用 `ws`，集中维护当前业务需要的连接、心跳、重连和消息分发逻辑。
@@ -41,7 +42,7 @@ LiteSocket 的底层通信层 `LiteServer` / `LiteClient` 受到 [Socket.IO](htt
 | --- | --- | --- |
 | 传输层 | 基于 Engine.IO，支持 HTTP 长轮询、WebSocket 等传输及升级机制 | 只使用 WebSocket / WSS，不提供长轮询回退 |
 | 消息协议 | 使用 Socket.IO / Engine.IO 协议 | 使用 `{ eventName, data }` JSON 封包，以字符串事件名分发消息 |
-| 事件注册 | 同一事件可以注册多个监听器 | 每个事件或消息只保留一个处理函数，重复注册会替换并记录提醒 |
+| 事件与消息注册 | 同一事件可以注册多个监听器 | 事件支持多监听器；每种消息只注册一个处理函数，重复注册会替换并记录提醒 |
 | 连接处理 | 提供连接事件与连接管理机制 | 提供 `connectPromise()`，以收到 `system` 消息作为协议就绪条件 |
 | 自动重连 | 客户端提供自动重连能力 | 默认关闭，可通过 `autoReconnect` 开启指数退避重连 |
 | 房间与扩展 | 提供房间、命名空间和多实例适配器等机制 | 提供进程内的房间与广播，未实现命名空间和跨实例适配器 |

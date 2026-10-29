@@ -19,8 +19,6 @@ export interface ClientParam {
 	checkIntervalMs?: number; // 默认1000
 }
 
-// export type onCircleFunc = (mod: string, msg: msgData) => void;
-
 export interface ClientSessionSocket {
 	connected?: boolean;
 	emit(event: string, args: msgData): void;
@@ -40,12 +38,6 @@ export class ClientSession extends SessionCallback {
 		this.socket = null;
 	}
 
-	// 发送的对象, 有循环引用导致无法json.stringfy
-	// funcCircle: onCircleFunc;
-	// checkCircle(func: onCircleFunc) {
-	// 	this.funcCircle = func;
-	// }
-
 	socket: ClientSessionSocket;
 
 	override isSessionConnect(): boolean {
@@ -58,12 +50,6 @@ export class ClientSession extends SessionCallback {
 	}
 
 	override emitMsg(mod: string, msg: msgData): void {
-		// this.logger.debug('sendMsg', mod, MsgId[msg[0]], msg);
-		// if (this.funcCircle && Utils.isCircle(msg)) {
-		// 	this.logger.error('sendMsg circle', mod, MsgId[msg[0]], msg);
-		// 	this.funcCircle(mod, msg);
-		// 	return;
-		// }
 		this.logger.debug('socket.emit', mod, getMsgName(msg[0]), msg);
 		this.socket.emit(mod, msg);
 	}

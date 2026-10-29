@@ -8,7 +8,7 @@
 // 4. 消息收发统一使用 JSON 封包/解包
 //
 // 与 socket.io.client 的差异：
-// 1. 将 event 和 msg 分开，回调只有一个函数（不使用 Node.js EventEmitter 模式）
+// 1. 将 event 和 msg 分开，网络事件使用跨平台 EventEmitter
 // 2. 统一的日志输出格式（logHeadEx）
 // 3. 支持消息大小上限：服务器会通过 system 消息通知客户端该上限，发送超过上限的消息会被拒绝
 // 4. autoReconnect 默认关闭，开启后支持指数退避自动重连
@@ -28,6 +28,7 @@ import {
 import { LiteLogger } from "../public/log";
 import { LiteSocket, SocketMsgType, SocketReason } from './LiteSocket';
 import { strict as assert } from 'node:assert';
+import { EventEmitter } from './EventEmitter';
 
 export type ClientEventFunc = (resaon: SocketReason, err?: any) => void;
 export type AllClientEventFunc = (
@@ -370,30 +371,24 @@ export class LiteClient extends LiteSocket implements CommonClient {
 		}
 	}
 
-	//唯一的函数, 不用Event来实现
-	private clientEventListeners: Record<string, ClientEventFunc> = Object.create(null);
+	private clientEvents = new EventEmitter<socketClientEvent, [reason?: SocketReason, err?: any]>();
 	// 一般不用, test用
 	allEventFunc: AllClientEventFunc | undefined;
 
 	//网络事件, 跟网络消息分开
 	emitEvent(eventName: socketClientEvent, reason?: SocketReason, err?: any): void {
 		const attempt = this.attempt;
-		const fn = this.clientEventListeners[eventName];
-		fn?.(reason, err);
+		this.clientEvents.emit(eventName, reason, err);
 		if (this.attempt === attempt) this.allEventFunc?.(eventName, reason, err);
 	}
 
 	onEvent(event: socketClientEvent, fn: ClientEventFunc): this {
-		const old = this.clientEventListeners[event];
-		if (old) {
-			this.logger.warn(this.logHead('onEvent', 'warn'), event, 'already registered');
-		}
-		this.clientEventListeners[event] = fn;
+		this.clientEvents.on(event, fn);
 		return this;
 	}
 
 	private clearAllEvent() {
-		this.clientEventListeners = Object.create(null);
+		this.clientEvents.removeAllListeners();
 		this.msgHandlers = Object.create(null);
 		this.allEventFunc = undefined;
 	}
