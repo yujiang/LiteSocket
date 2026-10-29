@@ -90,16 +90,31 @@ export class IOServer extends IOServerBase {
         this.handle = new TypeHandle(this.name, this.logger);
         this.modHandle = this.handle.getMsghandle(NetEventEnum.eventMod);
         this.cbHandle = this.handle.getMsghandleCallback();
-        this.cbHandle.register(
+        this.onCallback(
             MsgId.MSG_SYSTEM_QUERYHTTPSERVER,
-            (key: string) => key === 'name'
+            (socket:IOServerSocket, key: string) => {
+                return key === 'name'
                 ? [ErrorEnum.ErrorOk, this.name]
-                : [ErrorEnum.ErrorError, `unknown key ${key}`],
-            null,
-            SocketParamEnum.noSocket,
-            'cbhandle',
+                : [ErrorEnum.ErrorError, `unknown key ${key}`];
+            }
         );
     }
+
+    // roomMessage() {
+    //     this.onMessage(
+    //         MsgId.MSG_C2S_ROOM_OP,
+    //         (socket:IOServerSocket, op: string, room: string) => {
+    //             this.io.opRoom(op, room, socket);
+    //         }
+    //     )
+
+    //     this.onMessage(
+    //         MsgId.MSG_C2S_ROOM_BC,
+    //         (socket:IOServerSocket, room: string, msg: msgData) => {
+    //             this.bc(room, msg);
+    //         }
+    //     )
+    // }
 
     protected override configureServer(server: LiteServer): void {
         this.createEventMod(server);
@@ -153,12 +168,12 @@ export class IOServer extends IOServerBase {
         socket.createSession(this.name);
         this.bindSocket(socket);
     }
-    
+
     bindSocket(socket: IOServerSocket): void {
         this.handle.bindSocket(socket);
     }
     onClientDisconnected(socket: IOServerSocket): void {}
-   
+
     override close(): void {
         for (const socket of Array.from(this.io?.clients.values() ?? [])) {
             if (socket instanceof IOServerSocket) this.disconnectSocket(socket, 'server close');
@@ -182,11 +197,11 @@ export class IOServer extends IOServerBase {
     }
 
     kickoff(id: number, reason = 'kickoff'): boolean {
-        return this.io?.kickoff(id, reason) ?? false;    
+        return this.io?.kickoff(id, reason) ?? false;
     }
 
     exit(id: number): boolean {
-        return this.io?.exit(id) ?? false;    
+        return this.io?.exit(id) ?? false;
     }
 
     observe(id: number, log:LiteLogger) : boolean {

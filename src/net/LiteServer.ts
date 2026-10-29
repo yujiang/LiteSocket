@@ -267,7 +267,7 @@ export class LiteServer {
 		} else {
 			this.logger.warn(
 				this.logHead('handleClientMsg', 'warn'),
-				`no handler for event ${eventName}`,
+				`no handler for event [${eventName}]`,
 				this.getNameDisplay(),
 				client.id,
 				data,
@@ -324,6 +324,41 @@ export class LiteServer {
 	private leaveAllRooms(client: LiteServerClient): void {
 		this.rooms.leaveAll(client);
 	}
+
+	opRoom(op: string, room: string, client: LiteServerClient): void {
+		switch(op){
+			case 'join':
+				this.joinRoom(room, client);
+				break;
+			case 'leave':
+				this.leaveRoom(room, client);
+				break;
+			case 'dismiss':
+				this.dismissRoom(room);
+				break;			
+			default:
+		}
+	}
+
+	opRoomId(op: string, room: string, clientId: number): void {
+		if (op === 'dismiss') {
+			this.dismissRoom(room);
+			return
+		}
+		const client = this.findById(clientId);
+		if (!client) return;
+		switch(op){
+			case 'join':
+				this.joinRoom(room, client);
+				break;
+			case 'leave':
+				this.leaveRoom(room, client);
+				break;
+			default:
+		}
+	}
+
+
 	// room end...
 
 	// 服务器主动踢掉客户端, 类似GM踢人

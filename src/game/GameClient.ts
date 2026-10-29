@@ -26,8 +26,19 @@ export class GameClient extends IOClient{
         return rt;
     }
 
-    async chat(playerid: number, msg: string){
-        const rt = await this.asendMsg(MsgClientEnum.game_chat,playerid, msg);
+    async bcChat(msg: string){
+        const rt = await this.asendMsg(MsgClientEnum.game_bcchat, msg);
+        if (rt[0] == ErrorEnum.ErrorOk){
+            // .. nothing            
+        }
+        else {
+            console.log(`chat error`, rt);
+        }
+        return rt;
+    }
+    
+    async chatDes(desid: number, msg: string){
+        const rt = await this.asendMsg(MsgClientEnum.game_chat,desid, msg);
         if (rt[0] == ErrorEnum.ErrorOk){
             // .. nothing            
         }
@@ -53,6 +64,10 @@ export class GameClient extends IOClient{
         this.onMessage(MsgClientEnum.c_chat, 
             (id: number, msg: string)=>{
             console.log(`player ${id} chat: ${msg}`)   
+        })
+        this.onBroadcast(MsgClientEnum.bc_chat, 
+            (id: number, msg: string)=>{
+            console.log(`player ${id} bcchat: ${msg}`)   
         })
     }
 }

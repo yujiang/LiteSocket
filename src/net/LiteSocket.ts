@@ -18,7 +18,7 @@ import { msgData } from '../client';
 
 export type SocketReason = string | number;
 
-export type SocketMsgType = {eventName: string, data: any};
+export type SocketMsgType = {e: string, d: any};
 
 export abstract class LiteSocket {
 	name: string;
@@ -30,7 +30,7 @@ export abstract class LiteSocket {
 	}
 
     static encodeMessage(eventName: string, data: any): string {
-        return JSON.stringify({ eventName, data });    
+        return JSON.stringify({ e:eventName, d: data });    
     }
     static decodeMessage(data: string): SocketMsgType {
         return JSON.parse(data);
@@ -150,7 +150,7 @@ export abstract class LiteSocket {
 			return;
 		}
 		if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) ||
-			typeof parsed.eventName !== 'string' || parsed.eventName.length === 0 || !this.isValidSystemMessage(parsed)) {
+			typeof parsed.e !== 'string' || parsed.e.length === 0 || !this.isValidSystemMessage(parsed)) {
 			this.emitEvent('exception', msgInvalidPacket);
 			return;
 		}
@@ -158,8 +158,8 @@ export abstract class LiteSocket {
 	}
 
 	private isValidSystemMessage(parsed: SocketMsgType): boolean {
-		const data = parsed.data;
-		switch (parsed.eventName) {
+		const data = parsed.d;
+		switch (parsed.e) {
 			case 'ping':
 				return typeof data === 'number' && Number.isFinite(data) && data >= 0;
 			case 'pong':
@@ -192,32 +192,32 @@ export abstract class LiteSocket {
 			msg = LiteSocket.encodeMessage(event, data);
 		} catch (err) {
 			this.logger.error(this.logHead('emit', 'error'), 'error:', err instanceof Error ? err.message : String(err));
-			this.emitEvent('exception', msgJsonStringError, { eventName: event, data, error: err });
+			this.emitEvent('exception', msgJsonStringError, { e: event, d:data, error: err });
 			return false;
 		}
 		const maxSendLen = this.getMaxSendLen();
 		if (msg.length >= maxSendLen) {
 			this.logger.error(this.logHead('emit', 'error'), msgSendMax, msg.length, '>=', maxSendLen);
-			this.emitEvent('exception', msgSendMax, { eventName: event, data });
+			this.emitEvent('exception', msgSendMax, { e: event, d:data });
 			return false;
 		}
 		try {
 			this.ws.send(msg);
 		} catch (err) {
 			this.logger.error(this.logHead('emit', 'error'), 'error:', err instanceof Error ? err.message : String(err));
-			this.emitEvent('exception', msgSendError, { eventName: event, data, error: err });
+			this.emitEvent('exception', msgSendError, { e: event, d:data, error: err });
 			return false;
 		}
 		return true;
 	}
 
 	prevHandle(parsed: SocketMsgType) {
-		switch (parsed.eventName) {
+		switch (parsed.e) {
 			case 'pong':
-				this.onPong(parsed.data);
+				this.onPong(parsed.d);
 				break;
 			case 'ping':
-				this.onPing(parsed.data);
+				this.onPing(parsed.d);
 				break;
 			default:
 				return false;

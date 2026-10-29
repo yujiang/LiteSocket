@@ -1,7 +1,9 @@
-import { LiteLogger, ClientParam, LiteClientOptionsInput, SocketReason, ErrorEnum } from "../client";
+import { LiteLogger, ClientParam, LiteClientOptionsInput, SocketReason, ErrorEnum, msgData, MsgId } from "../client";
 import { GameGate } from "./GameGate";
 import { MsgGameGateEnum, MsgClientEnum } from "./MsgGame";
 import { Player } from "./Player";
+
+const ROOM_WORLD = "world"
 
 export class GameServer{
     gate: GameGate;
@@ -12,11 +14,15 @@ export class GameServer{
         this.fillMessages();
     }
 
+    opRoom(op: string, room: string, clientid: number){
+        this.gate.sendMsg(MsgId.MSG_C2S_ROOM_OP, op, room, clientid);
+    }
+
     async start(url: string) : Promise<boolean>{
         const rt = await this.gate.connectServer(url, (reason: SocketReason, err?: any)=>this.onDisconnect(reason, err));
         if(!rt) return false;
         // 等 Gate 确认注册完成，再允许客户端进入游戏。
-        const registered = await this.gate.asend([MsgGameGateEnum.game2gate_info, this.id], 5000);
+        const registered = await this.gate.asendMsg(MsgGameGateEnum.game2gate_info, this.id);
         return registered[0] === ErrorEnum.ErrorOk;
     }
 
@@ -43,14 +49,20 @@ export class GameServer{
         p = new Player(clientid, playerid) 
         this.Players[playerid] = p;
         this.Clients[clientid] = p;
+        this.opRoom("join", ROOM_WORLD, clientid)
         return true;
+    }
+
+    private exit(p:Player){
+        delete this.Clients[p.clientid];
+        delete this.Players[p.playerid];
+        this.opRoom("leave", ROOM_WORLD, p.clientid)
     }
 
     exitClient(clientid: number){
         let p = this.findClient(clientid);
         if(!p) return false;
-        delete this.Clients[clientid];
-        delete this.Players[p.playerid];
+        this.exit(p);
         return true;
     }
 
@@ -59,9 +71,17 @@ export class GameServer{
         let p = this.findPlayer(playerid);
         if(!p) return false;
         this.gate.sendMsg(MsgGameGateEnum.game2gate_exit, p.clientid, why);
-        delete this.Players[playerid];
-        delete this.Clients[p.clientid];
+        this.exit(p);
         return true;
+    }
+
+    // 广播消息
+    bcChat(playerid: number, msg: string){
+        this.bcRoom(ROOM_WORLD, MsgClientEnum.bc_chat, playerid, msg);
+    }
+
+    bcRoom(room: string, ...msg: msgData){
+        this.gate.sendMsg(MsgId.MSG_C2S_ROOM_BC, room, msg);
     }
 
     fillMessages(){
@@ -91,6 +111,16 @@ export class GameServer{
                 return [ErrorEnum.ErrorOk];
             }
         )
+
+        this.gate.onClientCallback(MsgClientEnum.game_bcchat, 
+            (clientid:number, chat: string) => {
+                const p1 = this.findClient(clientid);
+                if(!p1) return [ErrorEnum.ErrorError, "client not in game"];
+                this.bcChat(p1.playerid, chat);
+                return [ErrorEnum.ErrorOk];
+            }
+        )
+
 
         this.gate.onMessage(MsgGameGateEnum.gate2game_disconnect,
             (clientid: number) => {

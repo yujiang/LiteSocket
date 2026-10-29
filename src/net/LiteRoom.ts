@@ -2,6 +2,7 @@
 
 import { LiteServerClient } from './LiteServerClient';
 import { LiteServer } from './LiteServer';
+import { msgData } from '../public/Depends';
 
 export class LiteRoom {
 	readonly name: string;
@@ -22,7 +23,7 @@ export class LiteRoom {
 		this.clients.delete(client);
 	}
 
-	broadcast(event: string, data: any, exceptClient?: LiteServerClient): void {
+	broadcast(event: string, data: msgData, exceptClient?: LiteServerClient): void {
 		const server = this.man.server;
 		const message = server.encodeBroadcast(event, data, this.name);
 		if (message === undefined) return;

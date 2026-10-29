@@ -45,11 +45,14 @@ async function run(){
     const player2 = 456;
     await c1.enterGame(game.id, player1);
     await c2.enterGame(game.id, player2);
-    const r1 = await c1.chat(c2.playerid, 'hello world');
+    
+    const r1 = await c1.chatDes(c2.playerid, 'hello');
+    const r2 = await c2.bcChat('world!');
+
     await c2.exit();
     assert (c2.playerid == 0);
     //const r2 = await c2.chat(c1.playerid, 'good job!');
-    await c1.chat(player2, 'good job!');
+    await c1.chatDes(player2, 'good job!');
     
     game.exitGame(player1, "test");
     await delay(1000);

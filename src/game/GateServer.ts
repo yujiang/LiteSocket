@@ -1,5 +1,5 @@
 import { strict as assert } from "node:assert";
-import { ErrorEnum, LiteLogger, LiteOptionsInput, NetEventEnum } from "../client";
+import { ErrorEnum, LiteLogger, LiteOptionsInput, msgData, MsgId, NetEventEnum } from "../client";
 import { GateClients, ClientData } from "./GateClients";
 import { GameData, GateGames } from "./GateGames";
 import { IOServerSocket } from "../net/IOServerSocket";
@@ -31,7 +31,9 @@ export class GateServer {
         this.games = new GateGames("GateGames"+id, loggerGames);
         this.games.route = this.clients;
         this.clients.route = this.games;
+
         this.fillMessages();
+        this.roomMessage();
     }
     
     // 内网的gateport < 1000, 外网的clientport > 1000 这样一眼可以区分
@@ -50,6 +52,26 @@ export class GateServer {
             return [rt2,error2];
         }
         return [true];
+    }
+
+    roomMessage() {
+        this.games.onMessage(
+            MsgId.MSG_C2S_ROOM_OP,
+            (socket:IOServerSocket, op: string, room: string, clientid: number) => {
+                const custom: GameData = socket.customData;                
+                const sroom = custom.gameid + room;
+                this.clients.io.opRoomId(op, sroom, clientid);
+            }
+        )
+
+        this.games.onMessage(
+            MsgId.MSG_C2S_ROOM_BC,
+            (socket:IOServerSocket, room: string, msg: msgData) => {
+                const custom: GameData = socket.customData;                
+                const sroom = custom.gameid + room;
+                this.clients.bc(sroom, msg);
+            }
+        )
     }
 
     // 装配消息

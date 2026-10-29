@@ -26,7 +26,7 @@ import {
 	socketClientEvent,
 } from './LiteNet';
 import { LiteLogger } from "../public/log";
-import { LiteSocket, SocketReason } from './LiteSocket';
+import { LiteSocket, SocketMsgType, SocketReason } from './LiteSocket';
 import { strict as assert } from 'node:assert';
 // 外部逻辑只需要'connect''disconnect','connect_fail'
 // 其他的是内部诊断用
@@ -312,12 +312,12 @@ export class LiteClient extends LiteSocket implements CommonClient {
 		};
 	}
 
-	override prevHandle(parsed: any) {
+	override prevHandle(parsed: SocketMsgType) {
 		if (super.prevHandle(parsed)) return true;
-		if (parsed.eventName === 'system') {
+		if (parsed.e === 'system') {
 			const attempt = this.attempt;
 			if (!attempt || attempt.failed || attempt.connected) return true;
-			const sys = parsed.data as SocketSysMessage;
+			const sys = parsed.d as SocketSysMessage;
 			this.serverId = sys.id;
 			this.sys = sys;
 			attempt.connected = true;
@@ -370,13 +370,13 @@ export class LiteClient extends LiteSocket implements CommonClient {
 
 		if (this.prevHandle(parsed)) return;
 
-		const handler = this.msgHandlers[parsed.eventName];
+		const handler = this.msgHandlers[parsed.e];
 		if (handler) {
-			handler(parsed.data);
+			handler(parsed.d);
 		} else {
 			this.logger.warn(
 				this.logHead('onMessage', 'warn'),
-				`no handler for event ${parsed.eventName}`,
+				`no handler for event [${parsed.e}]`,
 				data,
 			);
 		}

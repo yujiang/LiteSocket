@@ -7,6 +7,7 @@ export enum MsgGameGateEnum{
     gate2game_exit,         // 退出
     gate2game_disconnect,   // 断线了
     game2gate_exit,         // game主动通知gate退出，可能是gm kickoff等
+
     end,
 }
 
@@ -14,9 +15,13 @@ export enum MsgClientEnum{
     start = 2000,
     gate_login = start,
     gate_entergame,
-    game_chat,    
     gate_exit,
+
+    game_chat,    
+    game_bcchat,
     c_chat,
+    bc_chat,
+
     end,
 }
 

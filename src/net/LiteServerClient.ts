@@ -121,16 +121,16 @@ export class LiteServerClient extends LiteSocket implements CommonSocket{
 		}
 
 		if (this.observeLogger) {
-			this.observeLogger.debug("[observe]", this.id, parsed.eventName, parsed.data);
+			this.observeLogger.debug("[observe]", this.id, parsed.e, parsed.d);
 		}
 
-		const handler = this.handlers.get(parsed.eventName);
+		const handler = this.handlers.get(parsed.e);
 		if (handler) {
-			handler(parsed.data);
+			handler(parsed.d);
 			return true;
 		}
 		else {
-			return this.server.handleClientMsg(this, parsed.eventName, parsed.data);
+			return this.server.handleClientMsg(this, parsed.e, parsed.d);
 		}
 	}
 
