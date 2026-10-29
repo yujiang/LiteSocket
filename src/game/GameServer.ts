@@ -47,7 +47,7 @@ export class GameServer{
     enterGame(clientid: number, playerid: number){
         let p = this.findPlayer(playerid);
         if(p || this.findClient(clientid)) return false;
-        p = new Player(clientid, playerid) 
+        p = new Player(this.gate,clientid, playerid) 
         this.Players[playerid] = p;
         this.Clients[clientid] = p;
         this.opRoom("join", ROOM_WORLD, clientid)
@@ -58,6 +58,7 @@ export class GameServer{
         delete this.Clients[p.clientid];
         delete this.Players[p.playerid];
         this.opRoom("leave", ROOM_WORLD, p.clientid)
+        p.exit();
     }
 
     exitClient(clientid: number){
@@ -108,7 +109,7 @@ export class GameServer{
                 if(!p1) return [ErrorEnum.ErrorError, "client not in game"];
                 const p2 = this.findPlayer(desid);
                 if(!p2) return [ErrorEnum.ErrorError, "des not in game"];
-                this.gate.sendClient(p2.clientid, [MsgClientEnum.c_chat, p1.playerid, chat]);
+                p2.sendClient(MsgClientEnum.c_chat, p1.playerid, chat);                
                 return [ErrorEnum.ErrorOk];
             }
         )
