@@ -1,17 +1,10 @@
-/*
-处理回调异步的回调
-并且每10s检测一下callback，也避免内存泄露,
-timeout无法统一处理，只能每个msg自带timeout！
-*/
+// LiteClient处理回调异步的回调
 
 import { SessionCallback, onTimeoutFunc } from './SessionCallback';
 import { getMsgName } from './msgid';
 import { msgData, Utils } from '../public/Depends';
 import { LiteLogger } from "../public/log";
 import { ErrorEnum, FirstErrorRt, CallbackFirstError } from './ErrorEnum';
-
-// rt 1 suc 0 fail
-// export type packCallback = (rt: number) => void;
 
 /**
  * Client RPC configuration, separate from transport options.
@@ -48,7 +41,6 @@ export interface ClientSessionSocket {
 
 const SESSION_MAX = 10*10000;
 
-// 作为LiteClient的回调
 /**
  * Client RPC registry; timeout checks must be scheduled explicitly.
  */
@@ -181,26 +173,5 @@ export class ClientSession extends SessionCallback {
 			this.session = 1;
 		}
 	}
-
-	// 开始打包 -- 不实用,删除了~
-	// packs: packData[] = [];
-
-	// pack = false;
-
-	// startPack() {
-	// 	this.pack = true;
-	// 	this.packs = [];
-	// }
-
-	// // 结束打包
-	// async endPack(timeout: number): Promise<number> {
-	// 	if (this.packs.length === 0) {
-	// 		return 0;
-	// 	}
-
-	// 	this.pack = false;
-	// 	const { packs } = this;
-	// 	this.packs = [];
-	// 	return this.asendSessionReturnError(NetEventEnum.eventPack, packs as msgData, timeout);
-	// }
 }
+

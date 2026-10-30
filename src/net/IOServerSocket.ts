@@ -1,3 +1,5 @@
+// LiteServerClient + session + msgData的发送 
+
 import type { WebSocket } from 'ws';
 import { LiteServerClient } from './LiteServerClient';
 import { LiteServer } from './LiteServer';

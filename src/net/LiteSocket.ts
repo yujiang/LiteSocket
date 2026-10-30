@@ -1,5 +1,4 @@
-// LiteSocket.s
-// LiteClient和LiteServerClient的基类
+// LiteSocket.s LiteClient和LiteServerClient的基类
 
 import { WebSocket } from 'ws';
 import {

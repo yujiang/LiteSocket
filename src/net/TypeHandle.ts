@@ -1,3 +1,5 @@
+// TypeHandle包括一系列的针对不同eventname的MsgHandle
+
 import type { LiteLogger } from "../public/log";
 import { NetEventEnum } from './msgid';
 import { MsgHandle, MsgHandleCB, SocketEmit } from './msg';

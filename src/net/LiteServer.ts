@@ -13,7 +13,7 @@
 // 2. 支持 Room 概念，支持房间管理和广播
 //
 // 与 socket.io 的差异：
-// 1. 将 event 和 msg 分离，客户端网络事件通过跨平台 EventEmitter 分发
+// 1. 将 event 和 msg 分离，event通过EventEmitter，而msg只有一个handle
 // 2. 日志输出格式统一（通过 logHeadEx）
 // 3. 支持消息大小上限：服务器会通过 system 消息告知客户端上限，
 //    客户端若发送超过该上限的消息将被拒绝

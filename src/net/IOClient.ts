@@ -1,6 +1,4 @@
-// 参考HttpClient
-// 把 LiteClient(替代socket.io) + NetCallback + msgHandle + Log 合在一起
-// 支持asend ...
+// 把 LiteClient(替代socket.io) + NetCallback + msgHandle 合在一起
 
 import type { LiteLogger } from "../public/log";
 import { LiteClient, LiteClientOptionsInput, ClientEventFunc } from "./LiteClient";
@@ -334,27 +332,7 @@ export class IOClient {
         this.logger.warn('destroy', why, this.serverUrl);
         this.close(why);
     }
-
-    // 不再考虑打包, 没有实际用到~
-
-	// 开始打包，一批命令必须全部执行！
-	// startPack() {
-	// 	this.callback.startPack();
-	// }
-
-	// // 结束打包
-	// endPack(timeout = 0): Promise<ErrorEnum> {
-	// 	return this.callback.endPack(timeout);
-	// }
-
-	// async unpackMsg(socket: HttpSocket, data: msgData) {
-	// 	const packs: [string, msgData][] = data;
-	// 	for (const p of packs) {
-	// 		const [type, msg] = p;
-	// 		this.handle.handleTypeMsg(socket, type, msg);
-	// 	}
-	// }
-    
+   
     /**
      * Registers one ordinary handler per message ID; duplicate registration replaces the previous handler with a warning.
      * @param msg - Positive numeric business message ID.

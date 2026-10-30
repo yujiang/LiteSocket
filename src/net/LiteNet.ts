@@ -1,7 +1,5 @@
-// LiteNet.ts
-// 提供公共的结构
+// LiteNet.ts 提供公共的结构
 
-// import * as chalk from 'chalk';
 import { colors } from "../public/color";
 
 /**

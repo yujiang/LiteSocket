@@ -6,8 +6,6 @@ export enum ErrorEnum {
 	ErrorOk,
 	/** Generic business or operation failure. */
 	ErrorError,
-	//Error_notdev,
-	//Error_notclient,
 
 	/** No usable transport is available for the request. */
 	Net_notconnect,

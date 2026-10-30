@@ -1,3 +1,5 @@
+// IOServerSocket处理回调异步的回调
+
 import { msgData } from '../public/Depends';
 import { LiteLogger } from "../public/log";
 import { SessionCallback } from './SessionCallback';

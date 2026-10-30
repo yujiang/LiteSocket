@@ -1,11 +1,9 @@
-// 参考HttpServer
 // 把 LiteServer(替代socket.io) + msgHandle + Log 合在一起
 
 import { setTimeout as delay } from "node:timers/promises";
 import { LiteOptionsInput } from "./LiteNet";
 import { LiteLogger, logStar } from "../public/log";
 import { ListenResult, LiteServer } from "./LiteServer";
-import { strict as assert } from "node:assert";
 import { msgData } from "../public/Depends";
 import { MsgHandle, MsgHandleCB, SocketParamEnum } from "./msg";
 import { NetEventEnum, MsgId } from "./msgid";

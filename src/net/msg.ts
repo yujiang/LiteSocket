@@ -1,8 +1,7 @@
 /*
 管理消息：消息结构为一个array，
 第一位为id:number,来自msgid.ts（之前第一位为string，虽然灵活但是效率低了）
-typehandle是针对类别的handle，包括
-typehandle包括一系列的msghandle,msghandle是针对消息的handle
+MsgHandle 处理消息，包括callback消息
 */
 import { strict as assert } from 'assert';
 import { CostGuard, CostGuards } from '../public/profile';

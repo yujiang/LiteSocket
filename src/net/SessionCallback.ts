@@ -1,3 +1,4 @@
+// 处理回调
 import { strict as assert } from 'assert';
 import { LiteLogger } from "../public/log";
 import { tryCall } from '../public/call';
