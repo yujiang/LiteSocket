@@ -21,7 +21,6 @@ test('connection factory creates the single client object used throughout the se
     const connected: LiteServerClient[] = [];
     const messages: LiteServerClient[] = [];
     const server = new LiteServer('factory-test', console);
-    server.setClientFactory(CustomClient);
     context.after(async () => {
         const websocketServer = server.wss;
         if (!websocketServer) return;
@@ -32,7 +31,7 @@ test('connection factory creates the single client object used throughout the se
     });
     server.onClient('client-connect', socket => connected.push(socket));
     server.onMessage('probe', socket => messages.push(socket));
-    assert.deepStrictEqual(await server.listenPromise(0), [true]);
+    assert.deepStrictEqual(await server.listenPromise(0, CustomClient), [true]);
     const client = createClient(context);
     await connect(client, `ws://127.0.0.1:${server.port}`);
     client.emit('probe', 'hello');

@@ -46,6 +46,8 @@ const [ok, error] = await server.listenPromise(port);
 错误对象保留 `code`，如端口占用的 `EADDRINUSE`。监听失败自动清理实例，只有监听成功才启动心跳；端口为 `0` 时，成功后 `server.port` 更新为实际端口。
 每个 `LiteServer` 实例只调用一次 `listenPromise`，按“创建、注册回调、等待监听完成、运行、关闭”的生命周期使用；不提供重复监听、切换端口或启动中取消的处理。需要再次启动时创建新实例。
 
+自定义连接包装类通过 `await server.listenPromise(port, CustomClient)` 传入，默认使用 `LiteServerClient`。工厂在创建监听器之前安装，不提供监听后设置工厂的接口。IO 层也在监听前设置当前 `io` 并注册生命周期处理，保证首个连接即可创建 RPC Session；监听失败后会清理当前实例。
+
 `server.kickoff(id, reason = 'kickoff')` 按连接 ID 断开指定客户端，使用 `SocketCloseCode.disconnect` 并传递关闭原因；未知 ID 不做处理。断线事件、房间清理和业务 RPC 结算走正常断开流程，不影响其他连接。此操作不是封禁，开启自动重连的客户端仍可能重新连接。
 
 ## WSS / TLS

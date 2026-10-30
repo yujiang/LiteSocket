@@ -170,29 +170,22 @@ export class LiteServer {
 		this.logger = logger;
 	}
 
-	clientFactory: ClientSocketClass;
-	/**
-	 * Sets the wrapper constructor for subsequently accepted connections.
-	 */
-	setClientFactory(factory: ClientSocketClass) {
-		this.clientFactory = factory;
-	}
+	private clientFactory: ClientSocketClass = LiteServerClient;
 	/**
 	 * Wraps an accepted WebSocket using the configured connection factory.
 	 * @param id - Connection ID or RPC correlation number, as specified by this API.
 	 */
 	createClient(ws: WebSocket, id: number, remoteAddress = '') {
-		if (this.clientFactory){
-			return new this.clientFactory(`${this.name}(${id})`, this.logger, ws, this, id, remoteAddress)
-		}
-		return new LiteServerClient(`${this.name}(${id})`, this.logger, ws, this, id, remoteAddress)
+		return new this.clientFactory(`${this.name}(${id})`, this.logger, ws, this, id, remoteAddress);
 	}
 
 	/**
 	 * Starts WS/WSS listening without retries; returns [success, error]. Port zero requests an OS-assigned port.
 	 * @param port - TCP port; zero requests an OS-assigned port.
+	 * @param clientFactory - Connection wrapper constructor installed before accepting the first connection.
 	 */
-	async listenPromise(port: number): Promise<ListenResult> {
+	async listenPromise(port: number, clientFactory: ClientSocketClass = LiteServerClient): Promise<ListenResult> {
+		this.clientFactory = clientFactory;
 		this.port = port;
 		try {
 			const { keyfile, certfile } = this.opts;

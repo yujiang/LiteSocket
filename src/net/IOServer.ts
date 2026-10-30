@@ -3,7 +3,7 @@
 import { setTimeout as delay } from "node:timers/promises";
 import { LiteOptionsInput } from "./LiteNet";
 import { LiteLogger, logStar } from "../public/log";
-import { ListenResult, LiteServer } from "./LiteServer";
+import { ClientSocketClass, ListenResult, LiteServer } from "./LiteServer";
 import { msgData } from "../public/Depends";
 import { MsgHandle, MsgHandleCB, SocketParamEnum } from "./msg";
 import { NetEventEnum, MsgId } from "./msgid";
@@ -79,14 +79,15 @@ export class IOServerBase {
         let retries = 0;
         while (true) {
             const server = this.createServer(this.name, opts);
-            const result = await server.listenPromise(port);
+            this.io = server;
+            this.configureServer(server);
+            const result = await server.listenPromise(port, this.getClientFactory());
             if (result[0]) {
-                this.configureServer(server);
-                this.io = server;
                 this.logger.warn(`IOServer ${this.name} listened:${server.port}`);
                 return result;
             }
             server.close();
+            if (this.io === server) this.io = undefined;
             const error = result[1];
             if (error?.code !== 'EADDRINUSE') {
                 this.logger.error(`IOServer ${this.name} listen ${port} error`, error);
@@ -101,7 +102,13 @@ export class IOServerBase {
         return new LiteServer(name, this.logger, opts);
     }
 
+    /** Installs connection lifecycle handlers before the transport starts accepting clients. */
     protected configureServer(server: LiteServer): void {}
+
+    /** Returns the connection wrapper constructor passed atomically to transport listening. */
+    protected getClientFactory(): ClientSocketClass {
+        return LiteServerClient;
+    }
 
     /**
      * Closes the current server; does not cancel an occupied-port retry loop already running.
@@ -198,10 +205,8 @@ export class IOServer extends IOServerBase {
         this.createEventMod(server);
     }
 
-    protected override createServer(name: string, opts: LiteOptionsInput): LiteServer {
-        const p = super.createServer(name, opts);
-        p.setClientFactory(IOServerSocket);
-        return p;
+    protected override getClientFactory(): ClientSocketClass {
+        return IOServerSocket;
     }
 
     /**

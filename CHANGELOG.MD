@@ -10,7 +10,7 @@
 event(事件)改为多播
 
 ## 0.1.7
-消除了一些override, 改为显示的注册
+JSDOC by AI
 
 # 其他
 
