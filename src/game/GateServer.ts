@@ -112,8 +112,11 @@ export class GateServer {
                 if (!custom.logined) {
                     return [ErrorEnum.ErrorError, "not login"]
                 }
-                if (custom.gameid || custom.entering){
+                if (custom.gameid){
                     return [ErrorEnum.ErrorError, "already in game"]
+                }
+                if (custom.entering){
+                    return [ErrorEnum.ErrorError, "entering game"]
                 }
                 if (!Number.isSafeInteger(playerid) || playerid <= 0) {
                     return [ErrorEnum.ErrorError, "invalid playerid"];
@@ -149,8 +152,8 @@ export class GateServer {
         this.clients.onCallback(MsgClientEnum.gate_exit, 
             async (socket:IOServerSocket) => {
                 const custom: ClientData = socket.customData;                
-                if (custom.entering) return [ErrorEnum.ErrorError, "entering game"];
-                if (!custom.logined) {
+                // if (custom.entering) return [ErrorEnum.ErrorError, "entering game"];
+                if (!custom.logined){ //并没有登录
                     return [ErrorEnum.ErrorOk];
                 }
                 if (!custom.gameid){
@@ -159,7 +162,7 @@ export class GateServer {
                     return [ErrorEnum.ErrorOk];
                 }
                 const game = this.games.findGame(custom.gameid);
-                if (!game){
+                if (!game){ //并没有在游戏中
                     custom.logined = false;
                     custom.gameid = 0;
                     custom.playerid = 0;

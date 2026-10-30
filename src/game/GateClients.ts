@@ -12,6 +12,7 @@ export class ClientData {
 	gameid = 0;
 	playerid = 0;
 	entering = false;
+	pending = 0;
     exit(reason: string) {
         // console.log("ClientData.exit", this.gameid, this.playerid, reason)
         console.log(`[gate] game ${this.gameid} exit`, this.playerid, reason);
@@ -38,7 +39,7 @@ export class GateClients extends IOServer {
 	override onClientDisconnected(socket: IOServerSocket): void {
 		super.onClientDisconnected(socket); 
 
-		const custom: ClientData = socket.customData as any;
+		const custom: ClientData = socket.customData as ClientData;
 		if (custom.gameid && custom.playerid) {
 			const game = this.route.findGame(custom.gameid);
 			game?.sendMsg(MsgGameGateEnum.gate2game_disconnect, socket.id);
@@ -71,7 +72,7 @@ export class GateClients extends IOServer {
 		if (!socket) return;
 		
 		// gameid 是业务编号，需要先找到对应的游戏服连接。
-		const custom: ClientData = socket.customData as any;
+		const custom: ClientData = socket.customData as ClientData;
 		const game = custom?.gameid ? this.route.findGame(custom.gameid) : undefined;
 		if (!game) {
 			if (isCallbackMod(stype)) {
@@ -87,7 +88,14 @@ export class GateClients extends IOServer {
 			// session放在末尾！
 			// 每一段连接使用独立 session，先取出上一段的 session。
 			const session = data.pop();
+			const max = this.param.pendingMax || 10;
+			if (custom.pending >= max){
+				socket.emit(NetEventEnum.eventCallbacked, [session, [ErrorEnum.ErrorError, "too many pending"]]);
+				return
+			}
+			custom.pending++;
 			const rt = await game.asendMod(stype, data);
+			custom.pending--;
 			this.onSendCallback();
 			socket.emit(NetEventEnum.eventCallbacked, [session, rt]);
 		} else {

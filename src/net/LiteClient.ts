@@ -488,7 +488,7 @@ export class LiteClient extends LiteSocket implements CommonClient {
 		this.closeSocket(this.ws, SocketCloseCode.normal, 'destroy');
 	}
 
-	// 主动发起断线, 一般只用于调试
+	// 主动断线, 一般只用于调试
 	override disconnect(code: SocketCloseCode = SocketCloseCode.disconnect, reason?: string) {
 		// 关闭重连
 		this.cancelReconnect();

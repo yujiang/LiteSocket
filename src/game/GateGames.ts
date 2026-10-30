@@ -51,7 +51,7 @@ export class GateGames extends IOServer {
     findGame(gameid: number) : IOServerSocket {
         const clients = this.io.clients;
         for (const client of clients.values()) {
-            const custom :GameData = client.customData
+            const custom: GameData = client.customData
             if (custom.gameid == gameid) {
                 return client as IOServerSocket;
             }

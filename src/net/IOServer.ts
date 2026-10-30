@@ -20,6 +20,7 @@ export type LiteCallbackSocketHandler = (arg0: IOServerSocket, ...arg1: any[]) =
 export interface ServerParam {
     checktimeout?: boolean; // 默认 false
     checkIntervalMs?: number; // 默认 1000
+    pendingMax?: number; // 默认 10
 }
 
 export class IOServerBase {
