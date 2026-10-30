@@ -41,7 +41,7 @@ This compares Socket.IO with `LiteServer` / `LiteClient`. Both provide bidirecti
 | Area | Socket.IO | LiteServer / LiteClient |
 | --- | --- | --- |
 | Transport | Engine.IO, with HTTP long-polling, WebSocket, and transport upgrades | WebSocket / WSS only; no long-polling fallback |
-| Message protocol | Socket.IO / Engine.IO protocols | JSON `{ eventName, data }` packets, dispatched by string event names |
+| Message protocol | Socket.IO / Engine.IO protocols | JSON `{ e, d }` packets, dispatched by string event names |
 | Event and message registration | Multiple listeners per event | Events support multiple listeners; each message name has one handler, and re-registration replaces it with a warning |
 | Connection handling | Connection events and connection management | `connectPromise()` waits for the `system` message before marking the protocol ready |
 | Automatic reconnection | Available in the client | Disabled by default; enable exponential backoff with `autoReconnect` |
@@ -92,7 +92,7 @@ lib/
     └── package.json
 ```
 
-The full library includes `LiteServer`, `IOServer`, room management, and all client APIs. Its runtime dependencies are `ws`, `chalk`, and `tslib`. The browser client includes `LiteClient`, `IOClient`, RPC, message types, error codes, logging, and profiling APIs, without server implementations.
+The full library includes `LiteServer`, `IOServer`, room management, and all client APIs. Its runtime dependencies are `ws` and `tslib`. The browser client includes `LiteClient`, `IOClient`, RPC, message types, error codes, logging, and profiling APIs, without server implementations.
 
 ## Complete Node.js library
 

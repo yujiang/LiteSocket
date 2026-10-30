@@ -1,3 +1,6 @@
+/**
+ * Built-in message IDs; application IDs should be above the reserved range.
+ */
 export enum MsgId {
 	// SYSTEM 保留 < 10
 	MSG_SYSTEM_DEFAULT = 1,
@@ -18,12 +21,22 @@ export enum MsgId {
 }
 
 // 从id获得name
+/**
+ * Resolves an application message ID to a diagnostic name.
+ */
 export type getMsgNameFunc = (id: number) => string
 let msgNameFunc: getMsgNameFunc;
+/**
+ * Installs the application message-name resolver for diagnostics.
+ */
 export function setMsgNameFunc(func: getMsgNameFunc): void {
 	msgNameFunc = func;
 }
 
+/**
+ * Resolves an ID using the application resolver, then the built-in enum.
+ * @param id - Connection ID or RPC correlation number, as specified by this API.
+ */
 export function getMsgName(id: number): string {
 	return msgNameFunc?.(id) || MsgId[id];
 }
@@ -39,6 +52,9 @@ export function getMsgName(id: number): string {
 // 	return msgIdFunc ? msgIdFunc(name) : MsgId[name];
 // }
 
+/**
+ * Wire event categories; changing their values changes the protocol.
+ */
 export enum NetEventEnum {
 	// 广播消息
 	eventBc = 'bc',

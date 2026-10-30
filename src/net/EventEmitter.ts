@@ -8,6 +8,11 @@ export class EventEmitter<Event extends string, Args extends unknown[]> {
 		return this;
 	}
 
+	/**
+	 * Sends a framed event; false means disconnected or synchronous encoding/size/send failure. True does not acknowledge delivery.
+	 * @param event - Transport category or lifecycle name, as specified by this API.
+	 * @param args - Unpacked arguments; variadic send APIs start with a message ID.
+	 */
 	emit(event: Event, ...args: Args): boolean {
 		const listeners = this.listeners.get(event);
 		if (!listeners?.length) return false;

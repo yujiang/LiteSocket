@@ -41,7 +41,7 @@ LiteSocket 的底层通信层 `LiteServer` / `LiteClient` 受到 [Socket.IO](htt
 | 方面 | Socket.IO | LiteServer / LiteClient |
 | --- | --- | --- |
 | 传输层 | 基于 Engine.IO，支持 HTTP 长轮询、WebSocket 等传输及升级机制 | 只使用 WebSocket / WSS，不提供长轮询回退 |
-| 消息协议 | 使用 Socket.IO / Engine.IO 协议 | 使用 `{ eventName, data }` JSON 封包，以字符串事件名分发消息 |
+| 消息协议 | 使用 Socket.IO / Engine.IO 协议 | 使用 `{ e, d }` JSON 封包，以字符串事件名分发消息 |
 | 事件与消息注册 | 同一事件可以注册多个监听器 | 事件支持多监听器；每种消息只注册一个处理函数，重复注册会替换并记录提醒 |
 | 连接处理 | 提供连接事件与连接管理机制 | 提供 `connectPromise()`，以收到 `system` 消息作为协议就绪条件 |
 | 自动重连 | 客户端提供自动重连能力 | 默认关闭，可通过 `autoReconnect` 开启指数退避重连 |
@@ -92,7 +92,7 @@ lib/
     └── package.json
 ```
 
-完整库包含 `LiteServer`、`IOServer`、房间管理和全部客户端 API，运行时需要本项目的 `ws`、`chalk`、`tslib` 依赖。浏览器客户端包含 `LiteClient`、`IOClient`、RPC、消息类型、错误码及日志和性能统计 API，不包含服务端实现。
+完整库包含 `LiteServer`、`IOServer`、房间管理和全部客户端 API，运行时需要本项目的 `ws`、`tslib` 依赖。浏览器客户端包含 `LiteClient`、`IOClient`、RPC、消息类型、错误码及日志和性能统计 API，不包含服务端实现。
 
 ## Node.js 完整库
 
@@ -152,7 +152,7 @@ async function main(): Promise<void> {
     });
     if (!connected) throw new Error(`连接失败：${reason}`);
     client.sendMsg(Message.Hello, '浏览器');
-    const [code, sum] = await client.asendNsg(Message.Add, 3, 5);
+    const [code, sum] = await client.asendCallback(Message.Add, 3, 5);
     if (code !== ErrorEnum.ErrorOk) throw new Error(`RPC 失败： ${code}`);
     console.log('3 + 5 =', sum);
 }
