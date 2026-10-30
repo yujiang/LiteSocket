@@ -5,21 +5,23 @@ import { WebSocket } from 'ws';
 import { LiteServer } from '../../src/net/LiteServer';
 import { LiteServerClient } from '../../src/net/LiteServerClient';
 import { LiteSocket } from '../../src/net/LiteSocket';
+import type { LiteLogger } from '../../src/public/log';
 import { connect, createClient, createLiteServer, waitUntil, within } from '../lite_test_helpers';
 
 // 工厂直接创建连接子类；连接事件、全局消息和 clients 集合拿到的都是同一个对象。
 test('connection factory creates the single client object used throughout the server', async context => {
+    const created: CustomClient[] = [];
     class CustomClient extends LiteServerClient {
         readonly tag = 'custom';
+        constructor(name: string, logger: LiteLogger, ws: WebSocket, owner: LiteServer, id: number, address = '') {
+            super(name, logger, ws, owner, id, address);
+            created.push(this);
+        }
     }
-    const created: CustomClient[] = [];
     const connected: LiteServerClient[] = [];
     const messages: LiteServerClient[] = [];
-    const server = new LiteServer('factory-test', console, {}, (ws, owner, id, address) => {
-        const socket = new CustomClient(`${owner.name}(${id})`, owner.logger, ws, owner, id, address);
-        created.push(socket);
-        return socket;
-    });
+    const server = new LiteServer('factory-test', console);
+    server.setClientFactory(CustomClient);
     context.after(async () => {
         const websocketServer = server.wss;
         if (!websocketServer) return;

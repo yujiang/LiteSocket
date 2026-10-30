@@ -147,10 +147,10 @@ client.onMessage(Message.HelloReply, (message: string) => {
 });
 
 async function main(): Promise<void> {
-    const connected = await client.connectServer('ws://localhost:8080', reason => {
+    const [connected, reason] = await client.connectServer('ws://localhost:8080', reason => {
         console.warn('连接断开：', reason);
     });
-    if (!connected) throw new Error('连接失败');
+    if (!connected) throw new Error(`连接失败：${reason}`);
     client.sendMsg(Message.Hello, '浏览器');
     const [code, sum] = await client.asendNsg(Message.Add, 3, 5);
     if (code !== ErrorEnum.ErrorOk) throw new Error(`RPC 失败： ${code}`);

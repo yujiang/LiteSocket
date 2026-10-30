@@ -48,7 +48,7 @@ async function example() {
         // 注册完成后再监听；端口 0 自动选择空闲端口，连接成功即可发送消息。
         const [listening, error] = await server.listen(0);
         if (!listening) throw error;
-        const connected = await client.connectServer(`ws://127.0.0.1:${server.io.port}`, (reason, err) => {
+        const [connected] = await client.connectServer(`ws://127.0.0.1:${server.io.port}`, (reason, err) => {
             console.error('客户端断线：', reason, err);
         });
         if (!connected) throw new Error('客户端连接失败');

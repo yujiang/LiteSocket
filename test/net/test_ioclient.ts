@@ -34,7 +34,7 @@ test('sendMsg forwards rest arguments like send while preserving spread input', 
     const received: unknown[][] = [];
     server.modHandle.register(messageId, (...args: unknown[]) => { received.push(args); },
         null, SocketParamEnum.noSocket, 'sendMsg-test');
-    assert(await within(client.connectServer(url, disconnect), 'sendMsg connection'));
+    assert((await within(client.connectServer(url, disconnect), 'sendMsg connection'))[0]);
     client.sendMsg(messageId);
     client.sendMsg(messageId, 'hello', 7, { enabled: true }, [1, 2]);
     client.send([messageId, 'legacy']);
@@ -82,7 +82,7 @@ test('connected client sends messages and receives callback replies', async cont
         null, SocketParamEnum.noSocket, 'message');
     server.cbHandle.register(messageId, (value: number) => [ErrorEnum.ErrorOk, value * 2],
         null, SocketParamEnum.noSocket, 'callback');
-    assert(await client.connectServer(url, disconnect));
+    assert.deepStrictEqual(await client.connectServer(url, disconnect), [true, '']);
     assert(client.callback.isSessionConnect());
     assert.equal(client.callback.socket, client.socket);
     client.send([messageId, 'send']);
@@ -106,7 +106,7 @@ test('handlers registered before connecting receive broadcast and server request
         onConnected(socket);
         socket.emit(NetEventEnum.eventBc, [messageId, 'hello']);
     });
-    assert(await client.connectServer(url, disconnect));
+    assert((await client.connectServer(url, disconnect))[0]);
     const socket = server.findById(client.socket.getServerId());
     assert.deepStrictEqual(await within(socket.session.asendSession(NetEventEnum.eventCallback, [messageId, 4], 0),
         'server request'), [ErrorEnum.ErrorOk, 5]);
@@ -123,7 +123,7 @@ test('sending before connection and after close returns not connected', async co
         assert.equal(await client.asende([messageId]), ErrorEnum.Net_notconnect);
     }
     await checkDisconnected();
-    assert(await client.connectServer(url, disconnect));
+    assert((await client.connectServer(url, disconnect))[0]);
     client.destroy('closed');
     await checkDisconnected();
 });
@@ -132,18 +132,25 @@ test('sending before connection and after close returns not connected', async co
 test('failed connection does not notify disconnect', async context => {
     const { client, disconnect, disconnects } = await setup(context);
     const { url } = await unusedAddress(context);
-    assert.equal(await within(client.connectServer(url, disconnect), 'failed connection'), false);
+    assert.deepStrictEqual(await within(client.connectServer(url, disconnect), 'failed connection'), [false, 'error']);
     assert.equal(client.socket, undefined);
     assert.equal(client.callback, undefined);
     assert.deepStrictEqual(disconnects, []);
     assert.deepStrictEqual(await client.asend([messageId]), [ErrorEnum.Net_notconnect, null]);
 });
 
+test('connectServer accepts the LiteClient connect timeout argument', async context => {
+    const { client } = await setup(context);
+    const stalled = await createStalledServer(context);
+    assert.deepStrictEqual(await within(client.connectServer(stalled.url, 50), 'connection timeout', 500), [false, 'timeout']);
+    assert.equal(client.socket, undefined);
+});
+
 // 网络断开时恰好通知一次，并让尚未收到响应的 RPC 返回断线错误。
 test('network disconnect notifies once and settles pending requests', async context => {
     const { client, server, url, disconnect, disconnects } = await setup(context);
     const received = holdRequests(server);
-    assert(await client.connectServer(url, disconnect));
+    assert((await client.connectServer(url, disconnect))[0]);
     const pending = client.asend([messageId]);
     await waitUntil(() => received() === 1, 'request received');
     server.io.findById(client.socket.getServerId()).terminate();
@@ -158,7 +165,7 @@ test('network disconnect notifies once and settles pending requests', async cont
 test('explicit close silently settles all pending requests', async context => {
     const { client, server, url, disconnect, disconnects } = await setup(context);
     const received = holdRequests(server);
-    assert(await client.connectServer(url, disconnect));
+    assert((await client.connectServer(url, disconnect))[0]);
     const pending = client.asend([messageId]);
     const pendingError = client.asende([messageId]);
     await waitUntil(() => received() === 2, 'requests received');
@@ -172,7 +179,7 @@ test('explicit close silently settles all pending requests', async context => {
 // 直接调用底层 socket.close 仍通知断线，区别于 IOClient.closeSocket 的静默 destroy。
 test('socket close notifies disconnect while wrapper close is silent', async context => {
     const { client, url, disconnect, disconnects } = await setup(context);
-    assert(await client.connectServer(url, disconnect));
+    assert((await client.connectServer(url, disconnect))[0]);
     client.socket.close();
     await waitUntil(() => disconnects.length === 1, 'socket close notification');
     assert.equal(client.socket, undefined);
@@ -191,7 +198,7 @@ test('close cancels an in-flight connection', async context => {
     assert.doesNotThrow(() => client.send([messageId]));
     assert.deepStrictEqual(await client.asend([messageId]), [ErrorEnum.Net_notconnect, null]);
     client.destroy('cancel connect');
-    assert.equal(await within(connecting, 'cancelled connection'), false);
+    assert.deepStrictEqual(await within(connecting, 'cancelled connection'), [false, 'destroyed']);
     assert.equal(socket.isConnected(), false);
     assert.equal(client.socket, undefined);
     assert.deepStrictEqual(disconnects, []);
@@ -204,8 +211,8 @@ test('new connection supersedes an in-flight attempt', async context => {
     const previous = client.connectServer(stalled.url, disconnect);
     const oldSocket = client.socket;
     const current = client.connectServer(url, disconnect);
-    assert.equal(await within(previous, 'superseded connection'), false);
-    assert(await within(current, 'current connection'));
+    assert.deepStrictEqual(await within(previous, 'superseded connection'), [false, 'destroyed']);
+    assert((await within(current, 'current connection'))[0]);
     assert.notEqual(client.socket, oldSocket);
     assert(client.socket.isConnected());
     assert.equal(client.serverUrl, url);
@@ -216,11 +223,11 @@ test('new connection supersedes an in-flight attempt', async context => {
 test('reconnecting settles old requests and preserves the new connection', async context => {
     const { client, server, url, disconnect, disconnects } = await setup(context);
     const received = holdRequests(server);
-    assert(await client.connectServer(url, disconnect));
+    assert((await client.connectServer(url, disconnect))[0]);
     const oldSocket = client.socket;
     const pending = client.asend([messageId]);
     await waitUntil(() => received() === 1, 'old request');
-    assert(await client.connectServer(url, disconnect));
+    assert((await client.connectServer(url, disconnect))[0]);
     assert.equal((await within(pending, 'old request settled'))[0], ErrorEnum.Callback_disconnect);
     assert.notEqual(client.socket, oldSocket);
     assert(client.socket.isConnected());
@@ -230,16 +237,16 @@ test('reconnecting settles old requests and preserves the new connection', async
 // disconnect 回调允许立即重连；旧连接先完成清理，不能把新连接 callback 清掉。
 test('disconnect callback can immediately reconnect and receives error details', async context => {
     const { client, server, url } = await setup(context);
-    let reconnecting: Promise<boolean>;
+    let reconnecting: Promise<[boolean, string]>;
     const error = new Error('connection lost');
     const events: unknown[][] = [];
-    assert(await client.connectServer(url, (reason, err) => {
+    assert((await client.connectServer(url, (reason, err) => {
         events.push([reason, err]);
         reconnecting = client.connectServer(url, () => {});
-    }));
+    }))[0]);
     const oldSocket = client.socket;
     oldSocket.emitDisconnect('error', error);
-    assert(await within(reconnecting, 'reconnect from disconnect'));
+    assert((await within(reconnecting, 'reconnect from disconnect'))[0]);
     oldSocket.emitDisconnect('close');
     assert.deepStrictEqual(events, [['error', error]]);
     assert(client.socket.isConnected());
@@ -253,7 +260,7 @@ test('IOClient owns the timeout interval and releases it on destroy', async cont
     const { client, server, url, disconnect } = await setup(context, true);
     const serverTimerCount = timers.length;
     const received = holdRequests(server);
-    assert(await client.connectServer(url, disconnect));
+    assert((await client.connectServer(url, disconnect))[0]);
     const callback = client.callback;
     const check = context.mock.method(callback, 'onCheck');
     const interval = timers[serverTimerCount];
@@ -283,7 +290,7 @@ test('IOClient preserves its transport and callbacks across automatic reconnect'
     });
     const received = holdRequests(server);
     const serverTimerCount = timers.length;
-    assert(await client.connectServer(url, disconnect));
+    assert((await client.connectServer(url, disconnect))[0]);
     const interval = timers[serverTimerCount];
     const timerCountBeforeDisconnect = timers.length;
     const socket = client.socket;
@@ -310,7 +317,7 @@ test('IOClient does not destroy an automatic client after initial connection fai
         autoReconnect: true, backoff: { baseMs: 100, maxMs: 100, jitter: 0, maxRetries: 2 },
     });
     const { url, port } = await unusedAddress(context);
-    assert.equal(await client.connectServer(url, disconnect), false);
+    assert.deepStrictEqual(await client.connectServer(url, disconnect), [false, 'error']);
     const socket = client.socket;
     assert(socket);
     assert.deepStrictEqual(await server.listen(port), [true]);
@@ -326,7 +333,7 @@ test('IOClient does not create a timeout interval when checking is disabled', as
     const timers = trackIntervals(context);
     const { client, url, disconnect } = await setup(context, false, {}, { checkIntervalMs: 25 });
     const serverTimerCount = timers.length;
-    assert(await client.connectServer(url, disconnect));
+    assert((await client.connectServer(url, disconnect))[0]);
     assert.equal(timers.length, serverTimerCount + 1);
 });
 
@@ -342,7 +349,8 @@ for (const action of ['fail', 'cancel'] as const) {
         const callback = client.callback;
         const check = context.mock.method(callback, 'onCheck');
         if (action === 'cancel') client.destroy('cancel pending connection');
-        assert.equal(await within(connecting, 'failed or cancelled connection'), false);
+        const [connected] = await within(connecting, 'failed or cancelled connection');
+        assert.equal(connected, false);
         assert(interval.cleared);
         interval.run();
         assert.equal(check.mock.callCount(), 0);
@@ -355,11 +363,11 @@ test('IOClient replaces its timeout interval when manually reconnecting', async 
     const timers = trackIntervals(context);
     const { client, url, disconnect } = await setup(context, true);
     const serverTimerCount = timers.length;
-    assert(await client.connectServer(url, disconnect));
+    assert((await client.connectServer(url, disconnect))[0]);
     const oldInterval = timers[serverTimerCount];
     const oldCheck = context.mock.method(client.callback, 'onCheck');
     const timerCount = timers.length;
-    assert(await client.connectServer(url, disconnect));
+    assert((await client.connectServer(url, disconnect))[0]);
     const newInterval = timers[timerCount];
     const newCheck = context.mock.method(client.callback, 'onCheck');
     assert(oldInterval.cleared);
@@ -379,7 +387,7 @@ test('IOClient uses the timeout check interval supplied through ClientParam', as
     const { client, server, url, disconnect } = await setup(context, true, {}, { checkIntervalMs: 25 });
     const serverTimerCount = timers.length;
     holdRequests(server);
-    assert(await client.connectServer(url, disconnect));
+    assert((await client.connectServer(url, disconnect))[0]);
     assert.equal(timers[serverTimerCount].timeout, 25);
     const [code] = await within(client.asend([messageId], 1), 'custom interval timeout');
     assert.equal(code, ErrorEnum.Callback_timeout);
@@ -391,7 +399,7 @@ for (const checkIntervalMs of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
         const timers = trackIntervals(context);
         const { client, url, disconnect } = await setup(context, true, {}, { checkIntervalMs });
         const serverTimerCount = timers.length;
-        assert(await client.connectServer(url, disconnect));
+        assert((await client.connectServer(url, disconnect))[0]);
         assert.equal(timers[serverTimerCount].timeout, 1000);
     });
 }

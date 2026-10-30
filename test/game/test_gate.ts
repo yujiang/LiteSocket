@@ -30,8 +30,8 @@ async function setup(context: TestContext) {
     assert(await within(game.start(`ws://127.0.0.1:${gate.games.io.port}`), 'game registration'));
     assert(gate.games.findGame(game.id), 'start must wait for game registration');
     const url = `ws://127.0.0.1:${gate.clients.io.port}`;
-    assert(await within(c1.connectServer(url, () => {}), 'client1 connect'));
-    assert(await within(c2.connectServer(url, () => {}), 'client2 connect'));
+    assert((await within(c1.connectServer(url, () => {}), 'client1 connect'))[0]);
+    assert((await within(c2.connectServer(url, () => {}), 'client2 connect'))[0]);
     return { gate, game, c1, c2 };
 }
 
@@ -105,8 +105,8 @@ test('exit confirms player cleanup before another client sends a chat', async co
         [ErrorEnum.ErrorError, 'des not in game']);
     const replacement = new GameClient('replacement-client', c2.logger, { checktimeout: true });
     context.after(() => replacement.destroy('test cleanup'));
-    assert(await within(replacement.connectServer(`ws://127.0.0.1:${gate.clients.io.port}`, () => {}),
-        'replacement client connect'));
+    assert((await within(replacement.connectServer(`ws://127.0.0.1:${gate.clients.io.port}`, () => {}),
+        'replacement client connect'))[0]);
     assert.deepStrictEqual(await within(replacement.login(), 'login again'), [ErrorEnum.ErrorOk]);
     assert.deepStrictEqual(await within(replacement.enterGame(game.id, player2), 'enter again'), [ErrorEnum.ErrorOk]);
 });

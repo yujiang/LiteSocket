@@ -80,6 +80,23 @@ test('connect, disconnect, close: one notification each in lifecycle order', asy
     watched.consistent();
 });
 
+test('connectPromise invokes its disconnect callback after connection loss', async context => {
+    const { server, url } = await createLiteServer(context, 0, {}, createLogger());
+    const watched = watchClient(context);
+    const disconnects: Array<[string | number, unknown]> = [];
+    assert.deepStrictEqual(await within(
+        watched.client.connectPromise(url, (reason, error) => { disconnects.push([reason, error]); }),
+        'connection',
+    ), [true, '']);
+
+    server.findById(watched.client.getServerId()).terminate();
+    await watched.wait('disconnect');
+    await waitUntil(() => disconnects.length === 1, 'disconnect callback');
+    assert.equal(disconnects[0][0], 'close');
+    assert.equal(disconnects[0][1], watched.events('disconnect')[0].error);
+    assert.deepStrictEqual(disconnects.map(([reason]) => reason), ['close']);
+});
+
 test('connect_fail and error: invalid URL fails synchronously without disconnect', async context => {
     const watched = watchClient(context);
     const { client, entries } = watched;

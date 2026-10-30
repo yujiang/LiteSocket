@@ -60,9 +60,16 @@ export class IOClient {
 
     serverUrl?: string;
 
-    disconnectFunc: ClientEventFunc;
-
-    async connectServer(url: string, disconnect: ClientEventFunc): Promise<boolean> {
+    // 因为是异步调用，时序的问题
+    // 在connectServer 之后 on('disconnect')怕来不及
+    /** Returns the same `[connected, reason]` result as `LiteClient.connectPromise()`. */
+    connectServer(url: string, disconnect: ClientEventFunc, timeout?: number): Promise<[boolean, string]>;
+    connectServer(url: string, timeout?: number): Promise<[boolean, string]>;
+    async connectServer(
+        url: string,
+        disconnectOrTimeout?: ClientEventFunc | number,
+        timeout?: number,
+    ): Promise<[boolean, string]> {
         this.close();
         this.serverUrl = url;
         const socket = new LiteClient(this.name, this.logger, this.opts);
@@ -70,7 +77,6 @@ export class IOClient {
         callback.resetSocket(socket);
         this.socket = socket;
         this.callback = callback;
-        this.disconnectFunc = disconnect;
         this.bindSocketCallback(socket, callback);
         if (this.param.checktimeout) {
             const configuredInterval = this.param.checkIntervalMs;
@@ -83,11 +89,18 @@ export class IOClient {
             (this.checkTimer as unknown as { unref?: () => void }).unref?.();
         }
         this.logger.info('connectServer', url);
-        const [rt, msg] = await socket.connectPromise(url);
+        const connectPromise = typeof disconnectOrTimeout === 'number'
+            ? socket.connectPromise(url, disconnectOrTimeout)
+            : disconnectOrTimeout
+                ? socket.connectPromise(url, disconnectOrTimeout, timeout)
+                : timeout === undefined
+                    ? socket.connectPromise(url)
+                    : socket.connectPromise(url, timeout);
+        const [rt, msg] = await connectPromise;
         this.logger.info('connectServer rt', rt, msg);
-        if (this.socket !== socket) return false;
+        if (this.socket !== socket) return [rt, msg];
         if (!rt && !socket.getOpts().autoReconnect) this.close(msg);
-        return rt;
+        return [rt, msg];
     }
 
     private bindSocketCallback(socket: LiteClient, callback: ClientSession) {
@@ -120,18 +133,12 @@ export class IOClient {
 	}
 
     onDisconnect(reason: SocketReason, err?: any){
-        const disconnect = this.disconnectFunc;
         if (this.socket?.getOpts().autoReconnect) {
             this.callback?.reset(ErrorEnum.Callback_disconnect, false, String(reason));
         } else {
             this.close(String(reason));
         }
         this.logger.warn(`onDisconnect ${this.name} for ${reason}`);
-        // if (err) {
-        //     this.logger.info(err);
-        // }
-        // this.emit(SocketEvent.disconnect, reason);
-        disconnect?.(reason, err);
     }
 
     // 不用timeout, 并没有好的处理方法~
@@ -192,7 +199,6 @@ export class IOClient {
         clearInterval(this.checkTimer);
         this.checkTimer = undefined;
         this.socket = undefined;
-        this.disconnectFunc = undefined;
         this.callback = undefined;
         socket?.destroy();
         callback?.reset(ErrorEnum.Callback_disconnect, false, reason);

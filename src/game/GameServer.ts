@@ -20,8 +20,8 @@ export class GameServer{
     }
 
     async start(url: string) : Promise<boolean>{
-        const rt = await this.gate.connectServer(url, (reason: SocketReason, err?: any)=>this.onDisconnect(reason, err));
-        if(!rt) return false;
+        const [connected] = await this.gate.connectServer(url, (reason: SocketReason, err?: any)=>this.onDisconnect(reason, err));
+        if(!connected) return false;
         // 等 Gate 确认注册完成，再允许客户端进入游戏。
         const registered = await this.gate.asendCallback(MsgGameGateEnum.game2gate_info, this.id);
         return registered[0] === ErrorEnum.ErrorOk;

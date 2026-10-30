@@ -30,7 +30,7 @@ export class IOServerSocket extends LiteServerClient implements ServerSessionSoc
         super.emitEvent(eventName, reason, err);
     }
 
-    // 支持回调
+    // 支持回调'cb'
     createSession(name: string): void {
         this.session = new ServerSession(name, this.logger, this);
 

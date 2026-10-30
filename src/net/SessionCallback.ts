@@ -4,6 +4,8 @@ import { tryCall } from '../public/call';
 import { msgData } from '../public/Depends';
 import { CallbackFirstError, ErrorEnum, FirstErrorRt } from './ErrorEnum';
 import { W10 } from './msg';
+import { SendExceptionDetails } from './LiteNet';
+import { SocketReason } from './LiteSocket';
 
 export type CallbackData = [string, msgData, CallbackFirstError, number, number];
 export type onTimeoutFunc = (msgid: number, data: CallbackData, timeout: number) => void;
@@ -134,5 +136,14 @@ export abstract class SessionCallback {
 			}
 		}
 		return num;
+	}
+
+	onSendFailed(reason: SocketReason, details: SendExceptionDetails){
+		const id = details.data[details.data.length - 1];
+		if (!Number.isSafeInteger(id) || id <= 0) return;
+		const pending = this.callbacks[id];
+		if (pending?.[0] === details.eventName && pending[1] === details.data) {
+			this.onSessionCallback(id, [ErrorEnum.settleSendFailure, String(reason)]);
+		}
 	}
 }

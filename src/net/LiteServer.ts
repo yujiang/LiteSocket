@@ -44,8 +44,13 @@ export type clientEvent =
 export type SocketEventFunc = (client: LiteServerClient, reason: SocketReason, err?: any) => void;
 export type ServerExceptionFunc = (reason: string, details: BroadcastExceptionDetails) => void;
 export type ListenResult = [boolean, NodeJS.ErrnoException?];
-export type ServerClientFactory = (
-	ws: WebSocket, server: LiteServer, id: number, remoteAddress?: string,
+export type ClientSocketClass = new (
+	name: string,
+	logger: LiteLogger,
+	ws: WebSocket,
+	server: LiteServer,
+	id: number,
+	remoteAddress?: string,
 ) => LiteServerClient;
 
 export class LiteServer {
@@ -75,14 +80,11 @@ export class LiteServer {
 
 	opts: LiteOptions;
 	logger: LiteLogger;
-	private readonly clientFactory: ServerClientFactory;
 
 	constructor(
 		name: string,
 		logger: LiteLogger,
 		opts: LiteOptionsInput = {},
-		clientFactory: ServerClientFactory = (ws, server, id, address) =>
-			new LiteServerClient(`${server.name}(${id})`, server.logger, ws, server, id, address),
 	) {
 		const limit = opts.messageRateLimit;
 		if (limit && (!Number.isFinite(limit.perSecond) || limit.perSecond <= 0 ||
@@ -99,7 +101,17 @@ export class LiteServer {
 
 		this.name = name;
 		this.logger = logger;
-		this.clientFactory = clientFactory;
+	}
+
+	clientFactory: ClientSocketClass;
+	setClientFactory(factory: ClientSocketClass) {
+		this.clientFactory = factory;
+	}
+	createClient(ws: WebSocket, id: number, remoteAddress = '') {
+		if (this.clientFactory){
+			return new this.clientFactory(`${this.name}(${id})`, this.logger, ws, this, id, remoteAddress)
+		}
+		return new LiteServerClient(`${this.name}(${id})`, this.logger, ws, this, id, remoteAddress)
 	}
 
 	async listenPromise(port: number): Promise<ListenResult> {
@@ -155,7 +167,7 @@ export class LiteServer {
 
 	private onConnect(ws: WebSocket, remoteAddress?: string) {
 		const id = this.assignClientId();
-		const client = this.clientFactory(ws, this, id, remoteAddress);
+		const client = this.createClient(ws, id, remoteAddress);
 		this.logger.info(this.logHead('onConnect'), 'id:', id);
 		this.clients.set(id, client);
 		const sys = { id, maxSendLen: this.opts.maxRecvLen, maxRecvLen: this.opts.maxSendLen };
@@ -191,13 +203,14 @@ export class LiteServer {
 		return message;
 	}
 
-	emitClient(eventName: clientEvent, client: LiteServerClient, reason?: SocketReason, err?: any): void {
-		if (eventName === 'client-close') {
-			this.logger.warn(this.logHead(eventName, 'warn'), 'id:', client.id, "reason:", reason);
-			this.clients.delete(client.id);
-			this.leaveAllRooms(client);
-		}
+	onClientClose(client: LiteServerClient, reason?: SocketReason, err?: any){
+		this.logger.warn(this.logHead('client-close', 'warn'), 'id:', client.id, "reason:", reason);
+		this.clients.delete(client.id);
+		this.leaveAllRooms(client);
+	}
 
+	emitClient(eventName: clientEvent, client: LiteServerClient, reason?: SocketReason, err?: any): void {
+		if (eventName === 'client-close') this.onClientClose(client, reason, err);
 		this.clientEvents.emit(eventName, client, reason, err);
 	}
 

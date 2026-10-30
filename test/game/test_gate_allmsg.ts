@@ -30,9 +30,9 @@ test('game message enums are exercised through the gate', async context => {
     assert(gate.games.findGame(game.id), 'game2gate_info registers the game with the gate');
 
     const url = `ws://127.0.0.1:${gate.clients.io.port}`;
-    assert(await within(client1.connectServer(url, () => {}), 'client1 connect'));
-    assert(await within(client2.connectServer(url, () => {}), 'client2 connect'));
-    assert(await within(client3.connectServer(url, () => {}), 'client3 connect'));
+    assert((await within(client1.connectServer(url, () => {}), 'client1 connect'))[0]);
+    assert((await within(client2.connectServer(url, () => {}), 'client2 connect'))[0]);
+    assert((await within(client3.connectServer(url, () => {}), 'client3 connect'))[0]);
 
     assert.deepStrictEqual(await within(client1.login(), 'gate_login'), [ErrorEnum.ErrorOk]);
     assert.deepStrictEqual(await within(client2.login(), 'gate_login client2'), [ErrorEnum.ErrorOk]);

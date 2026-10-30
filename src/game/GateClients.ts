@@ -25,19 +25,14 @@ export class ClientData {
 export class GateClients extends IOServer {
 	route: GateGames;
 
-    override onClientConnected(socket: IOServerSocket): void {
-		// 忽略基本的bind，改用自己的绑定, 
-		// 这种用法不常见, 限于route的特殊性
-        // super.onClientConnected(socket); 
-		socket.createSession(this.name);
-
+	override bindSocketMsg(socket: IOServerSocket): void{
+		// 重定向event
 		socket.customData = new ClientData();
-        this.bindRoute(socket);
-    }
+		this.bindRoute(socket);
+	}
 
 	override onClientDisconnected(socket: IOServerSocket): void {
-		super.onClientDisconnected(socket); 
-
+		super.onClientDisconnected(socket);
 		const custom: ClientData = socket.customData as any;
 		if (custom.gameid && custom.playerid) {
 			const game = this.route.findGame(custom.gameid);

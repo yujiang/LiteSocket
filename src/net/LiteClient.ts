@@ -106,6 +106,7 @@ export class LiteClient extends LiteSocket implements CommonClient {
 
 	private attempt?: ConnectAttempt;
 	private reconnectController?: AbortController;
+	private disconnectFunc?: ClientEventFunc;
 	private retries = 0;
 	private connectedTimes = 0;
 
@@ -231,9 +232,21 @@ export class LiteClient extends LiteSocket implements CommonClient {
 		return attempt;
 	}
 
-	connectPromise(url: string, timeout = this.opts.connectTimeout): Promise<[boolean, string]> {
+	/** Calls disconnect after an established connection is lost; initial connection failures do not call it. */
+	connectPromise(url: string, disconnect: ClientEventFunc, timeout?: number): Promise<[boolean, string]>;
+	connectPromise(url: string, timeout?: number): Promise<[boolean, string]>;
+	connectPromise(
+		url: string,
+		disconnectOrTimeout?: ClientEventFunc | number,
+		timeout = this.opts.connectTimeout,
+	): Promise<[boolean, string]> {
 		if (!url) {
 			return Promise.resolve([false, 'empty url']);
+		}
+		if (typeof disconnectOrTimeout === 'function') {
+			this.disconnectFunc = disconnectOrTimeout;
+		} else if (typeof disconnectOrTimeout === 'number') {
+			timeout = disconnectOrTimeout;
 		}
 		if (this.url === url){
 			if (this.isConnected()){
@@ -415,7 +428,9 @@ export class LiteClient extends LiteSocket implements CommonClient {
 		clearInterval(this.heartbeatTimer);
 		this.heartbeatTimer = null;
 		const controller = this.reconnectController;
+		const disconnectFunc = this.disconnectFunc;
 		this.emitEvent('disconnect', reason, err);
+		disconnectFunc?.(reason, err);
 		if (controller && this.attempt === attempt && this.isReconnectActive(controller)) {
 			void this.reconnectAfter(Promise.resolve([false, String(reason)]), controller);
 		}
@@ -479,6 +494,7 @@ export class LiteClient extends LiteSocket implements CommonClient {
 		this.heartbeatTimer = null;
 		this.serverId = 0;
 		this.sys = undefined;
+		this.disconnectFunc = undefined;
 		this.clearAllEvent();
 		this.closeSocket(this.ws, SocketCloseCode.normal, 'destroy');
 	}

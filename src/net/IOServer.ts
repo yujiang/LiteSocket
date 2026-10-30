@@ -42,9 +42,9 @@ export class IOServerBase {
         let retries = 0;
         while (true) {
             const server = this.createServer(this.name, opts);
-            this.configureServer(server);
             const result = await server.listenPromise(port);
             if (result[0]) {
+                this.configureServer(server);
                 this.io = server;
                 this.logger.warn(`IOServer ${this.name} listened:${server.port}`);
                 return result;
@@ -130,8 +130,9 @@ export class IOServer extends IOServerBase {
     }
 
     protected override createServer(name: string, opts: LiteOptionsInput): LiteServer {
-        return new LiteServer(name, this.logger, opts, (ws, server, id, address) =>
-            new IOServerSocket(`${server.name}(${id})`, this.logger, ws, server, id, address));
+        const p = super.createServer(name, opts);
+        p.setClientFactory(IOServerSocket);
+        return p;
     }
 
     findById(id: number): IOServerSocket | undefined {
@@ -144,44 +145,52 @@ export class IOServer extends IOServerBase {
             this.logger.error('IOServer broadcast exception', reason, details);
         });
         server.onClient('exception', (client, reason, err) => {
-            this.logger.error('IOServer client exception', client.id, reason, err);
+            this.logger.error('client exception', client.id, reason, err);
         });
         server.onClient('client-error', (client, reason, err) => {
-            this.logger.error('IOServer client error', client.id, reason, err);
+            this.logger.error('client error', client.id, reason, err);
         });
-        server.onClient('client-connect', socket => {
-            assert(socket instanceof IOServerSocket);
-            this.logger.warn(`client ${socket.id} ${getIp(socket)} connected!`);
+        server.onClient('client-connect', client => {
+            this.logger.warn(`client ${client.id} ${getIp(client)} connected!`);
             // this.handleLifecycle(socket, MsgId.MSG_SYSTEM_CONNECT);
-            this.onClientConnected(socket);
+            this.onClientConnected(client as IOServerSocket);
         });
         server.onClient('client-disconnect', (client, reason) => {
-            if (client instanceof IOServerSocket) this.disconnectSocket(client, String(reason));
+            this.logger.warn(`client ${client.id} ${getIp(client)} disconnected!`);
+            // this.disconnectSocket(client as IOServerSocket, String(reason));
+            this.onClientDisconnected(client as IOServerSocket);
         });
+    }
+
+    // 比较常用,可以保留重载
+    onClientDisconnected(socket: IOServerSocket): void {
+        this.disconnectSocket(socket, 'client disconnect');
     }
 
     private disconnectSocket(socket: IOServerSocket, reason: string): void {
         if (!socket.dispose(reason)) return;
         this.logger.warn(`client ${socket.id} ${getIp(socket)} disconnect for ${reason}!`);
         // this.handleLifecycle(socket, MsgId.MSG_SYSTEM_DISCONNECT);
-        this.onClientDisconnected(socket);
+        // this.onClientDisconnected(socket);
     }
 
+    // 比较常用,可以保留重载
     onClientConnected(socket: IOServerSocket): void {
         socket.createSession(this.name);
-        this.bindSocket(socket);
+        this.bindSocketMsg(socket);
     }
 
-    bindSocket(socket: IOServerSocket): void {
+    bindSocketMsg(socket: IOServerSocket): void {
         this.handle.bindSocket(socket);
     }
-    onClientDisconnected(socket: IOServerSocket): void {}
+
+    //onClientDisconnected(socket: IOServerSocket): void {}
 
     override close(): void {
         clearInterval(this.checkTimer);
         this.checkTimer = undefined;
         for (const socket of Array.from(this.io?.clients.values() ?? [])) {
-            if (socket instanceof IOServerSocket) this.disconnectSocket(socket, 'server close');
+            if (socket instanceof IOServerSocket) this.onClientDisconnected(socket);
         }
         super.close();
     }
@@ -228,5 +237,4 @@ export class IOServer extends IOServerBase {
         return sock.asendMod(type, args);
     }
 }
-
 

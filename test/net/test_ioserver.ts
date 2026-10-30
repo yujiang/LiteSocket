@@ -254,7 +254,7 @@ test('client and broadcast exceptions are forwarded to the server logger', async
     server.bc('main', [testMessage, 'x'.repeat(256)]);
     assert.equal(errors.length, 3);
     assert(String(errors[0][0]).includes('parseMessage'));
-    assert.equal(errors[1][0], 'IOServer client exception');
+    assert.equal(errors[1][0], 'client exception');
     assert.equal(errors[2][0], 'IOServer broadcast exception');
     assert.deepStrictEqual(messages, ['still connected']);
     assert(client.isConnected());
@@ -278,5 +278,5 @@ test('socket error followed by close cleans business state exactly once', async 
     assert.equal(server.io.clients.size, 0);
     assert.deepStrictEqual(disconnected, [socket]);
     assert.equal(errors.length, 1);
-    assert.equal(errors[0][0], 'IOServer client error');
+    assert.equal(errors[0][0], 'client error');
 });

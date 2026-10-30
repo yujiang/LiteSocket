@@ -147,10 +147,10 @@ client.onMessage(Message.HelloReply, (message: string) => {
 });
 
 async function main(): Promise<void> {
-    const connected = await client.connectServer('ws://localhost:8080', reason => {
+    const [connected, reason] = await client.connectServer('ws://localhost:8080', reason => {
         console.warn('Disconnected:', reason);
     });
-    if (!connected) throw new Error('Connection failed');
+    if (!connected) throw new Error(`Connection failed: ${reason}`);
     client.sendMsg(Message.Hello, 'browser');
     const [code, sum] = await client.asendMsg(Message.Add, 3, 5);
     if (code !== ErrorEnum.ErrorOk) throw new Error(`RPC failed: ${code}`);
