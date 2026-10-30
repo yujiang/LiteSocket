@@ -20,9 +20,9 @@ export class GateGames extends IOServer {
 		}
     }
 
-    override bindSocket(socket: IOServerSocket): void {
+    override bindSocketMsg(socket: IOServerSocket): void {
         //处理aoi, 广播的消息
-        super.bindSocket(socket);
+        super.bindSocketMsg(socket);
         this.bindRoute(socket);
     }
 

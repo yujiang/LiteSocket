@@ -4,8 +4,10 @@ import { strict as assert } from 'node:assert';
 import { test, TestContext } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { createLogger } from '../logger_helpers';
-import { IOServerBase } from '../../src/net/IOServer';
-import { LiteServer } from '../../src/net/LiteServer';
+import { IOServer, IOServerBase } from '../../src/net/IOServer';
+import { ClientSocketClass, LiteServer } from '../../src/net/LiteServer';
+import { IOServerSocket } from '../../src/net/IOServerSocket';
+import { ErrorEnum } from '../../src/net/ErrorEnum';
 import { connect, createClient, createLiteServer, waitUntil, within } from '../lite_test_helpers';
 
 function createOwner(context: TestContext) {
@@ -26,9 +28,9 @@ function createOwner(context: TestContext) {
 function recordAttempts(context: TestContext) {
     const attempts: LiteServer[] = [];
     const listenPromise = LiteServer.prototype.listenPromise;
-    context.mock.method(LiteServer.prototype, 'listenPromise', function(this: LiteServer, port: number) {
+    context.mock.method(LiteServer.prototype, 'listenPromise', function(this: LiteServer, port: number, factory?: ClientSocketClass) {
         attempts.push(this);
-        return listenPromise.call(this, port);
+        return listenPromise.call(this, port, factory);
     });
     return attempts;
 }
@@ -106,17 +108,43 @@ test('runtime listener errors are logged after listening succeeds', async contex
     await connect(createClient(context), url);
 });
 
-// 适配层直接 await LiteServer 的监听结果，成功后才公布 io，并能接收真实客户端。
-test('IOServerBase publishes io after successful listening', async context => {
+// 接受连接之前公布当前实例，保证首个连接的回调可以访问 io。
+test('IOServerBase exposes the current instance before accepting connections', async context => {
     const { owner } = createOwner(context);
     const listening = owner.listen(0, { maxRecvLen: 256 });
-    assert.equal(owner.io, undefined);
+    assert(owner.io instanceof LiteServer);
     assert.deepStrictEqual(await within(listening, 'IO server listening'), [true]);
     assert.equal(owner.io.name, 'listen-test');
     assert(owner.io.port > 0);
     const client = createClient(context);
     await connect(client, `ws://127.0.0.1:${owner.io.port}`);
     assert.equal(client.getMaxSendLen(), 256);
+});
+
+test('IOServer configures its factory and RPC handlers before listen resolves', async context => {
+    const logger = createLogger({ silent: true });
+    const owner = new IOServer('early-client', logger);
+    context.after(() => { owner.close(); logger.close(); });
+    owner.onCallback(910001, (socket, value: number) => {
+        assert(socket instanceof IOServerSocket);
+        assert.equal(owner.io.findById(socket.id), socket);
+        assert(socket.session);
+        return [ErrorEnum.ErrorOk, value + 1];
+    });
+    const original = LiteServer.prototype.listenPromise;
+    context.mock.method(LiteServer.prototype, 'listenPromise', async function(this: LiteServer, port: number, factory?: ClientSocketClass) {
+        assert.equal(factory, IOServerSocket);
+        const result = await original.call(this, port, factory);
+        if (!result[0]) return result;
+        // Exercise a real connection and RPC while the IO listen await is still pending.
+        const client = createClient(context);
+        await connect(client, `ws://127.0.0.1:${this.port}`);
+        const response = new Promise(resolve => client.on('cb2', resolve));
+        client.emit('cb', [910001, 4, 77]);
+        assert.deepStrictEqual(await within(response, 'RPC before listen resolves'), [77, [ErrorEnum.ErrorOk, 5]]);
+        return result;
+    });
+    assert.deepStrictEqual(await within(owner.listen(0), 'early-client listening'), [true]);
 });
 
 // 持续占用端口，确认重试次数递增到 1、2；释放端口后，下一次重试应成功且旧失败实例均已清理。

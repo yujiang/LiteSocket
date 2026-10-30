@@ -220,7 +220,7 @@ test('events and room cleanup are isolated between clients', async context => {
     await waitUntil(() => received, 'remaining client still usable');
 });
 
-test('onClient replaces the previous listener for the same event', async context => {
+test('onClient invokes every listener for the same event in registration order', async context => {
     const watched = await watchServer(context);
     const calls: string[] = [];
     watched.server.onClient('client-connect', () => { calls.push('old'); });
@@ -230,7 +230,7 @@ test('onClient replaces the previous listener for the same event', async context
         calls.push('new');
     });
     await watched.connect();
-    assert.deepStrictEqual(calls, ['new']);
+    assert.deepStrictEqual(calls, ['old', 'new']);
 });
 
 // 广播的异常属于 server.onEvent，不应归到任意单连接的 onClient('exception')。
@@ -243,7 +243,9 @@ for (const scope of ['server', 'room']) {
             first.peer.join('main');
             second.peer.join('main');
             const errors: Array<{ reason: string, details: BroadcastExceptionDetails }> = [];
+            const secondaryErrors: Array<{ reason: string, details: BroadcastExceptionDetails }> = [];
             watched.server.onEvent('exception', (reason, details) => { errors.push({ reason, details }); });
+            watched.server.onEvent('exception', (reason, details) => { secondaryErrors.push({ reason, details }); });
             const circular: { self?: unknown } = {};
             circular.self = circular;
             const payload: [number, unknown] = [1, kind === 'oversized' ? 'x'.repeat(512) : circular];
@@ -253,6 +255,7 @@ for (const scope of ['server', 'room']) {
             if (scope === 'server') watched.server.broadcast('probe', payload);
             else watched.server.getRoom('main').broadcast('probe', payload);
             assert.equal(errors.length, 1);
+            assert.deepStrictEqual(secondaryErrors, errors);
             const { reason, details } = errors[0];
             assert.equal(reason, kind === 'oversized' ? msgSendMax : msgJsonStringError);
             assert.equal(details.eventName, 'probe');

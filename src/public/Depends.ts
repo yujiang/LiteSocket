@@ -1,12 +1,27 @@
 // 之前的依赖都放在这里, 之后再慢慢分拣
 
 // utils.ts
+/**
+ * Business tuple beginning with a positive numeric message ID.
+ */
 export type msgData = [number, ...any[]];
+/**
+ * Pair containing an event category and a business message tuple.
+ */
 export type packData = [string, msgData];
+/**
+ * String-keyed object containing unknown values.
+ */
 export type SimpleObj = Record<string, unknown>;
 
 //struct.ts
+/**
+ * Business callback accepting unpacked arguments.
+ */
 export type EventCallbackFunc = (...args: any[]) => unknown;
+/**
+ * Numeric message ID to callback registration map.
+ */
 export type EventMods = { [key: number]: EventCallbackFunc };
 
 //Utils.ts

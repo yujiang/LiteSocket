@@ -61,7 +61,7 @@ test('IOServer forwards TLS options and supports RPC over WSS', async context =>
     context.after(() => { client.destroy('cleanup'); server.close(); });
     server.onCallback(940001, (_peer, left: number, right: number) => [ErrorEnum.ErrorOk, left + right]);
     assert.deepStrictEqual(await within(server.listen(0, tlsOptions), 'WSS RPC listen'), [true]);
-    assert(await within(client.connectServer(getWsUrl('127.0.0.1', server.io.port, true), () => {}), 'WSS RPC connection'));
+    assert((await within(client.connectServer(getWsUrl('127.0.0.1', server.io.port, true), () => {}), 'WSS RPC connection'))[0]);
     assert.deepStrictEqual(await within(client.asend([940001, 3, 5], 1000), 'WSS RPC result'), [ErrorEnum.ErrorOk, 8]);
 });
 

@@ -60,7 +60,7 @@ async function example() {
         const [listening, error] = await server.listen(0);
         if (!listening) throw error;
 
-        const connected = await client.connectServer(`ws://127.0.0.1:${server.io.port}`, (reason, err) => {
+        const [connected] = await client.connectServer(`ws://127.0.0.1:${server.io.port}`, (reason, err) => {
             console.error('客户端断线：', reason, err);
         });
         if (!connected) throw new Error('客户端连接失败');

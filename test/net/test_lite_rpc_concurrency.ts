@@ -68,7 +68,7 @@ test('identical session numbers on different clients do not interfere', async co
         return request.promise;
     });
     await connect();
-    assert(await other.connectServer(url, () => {}));
+    assert((await other.connectServer(url, () => {}))[0]);
     const first = client.asend([messageId, 'first']);
     const second = other.asend([messageId, 'second']);
     await waitUntil(() => pending.size === 2, 'both clients received');

@@ -30,11 +30,11 @@ async function run(){
     const rt2 = await game.start(`ws://127.0.0.1:${gateport}`);
     if (!rt2) throw new Error('game.start failed');
 
-    const connected1 = await c1.connectServer(`ws://127.0.0.1:${clientport}`, (reason, err) => {
+    const [connected1] = await c1.connectServer(`ws://127.0.0.1:${clientport}`, (reason, err) => {
         console.error('c1客户端断线：', reason);
     });
     if (!connected1) throw new Error('客户端1连接失败');
-    const connected2 = await c2.connectServer(`ws://127.0.0.1:${clientport}`, (reason, err) => {
+    const [connected2] = await c2.connectServer(`ws://127.0.0.1:${clientport}`, (reason, err) => {
         console.error('c2客户端断线：', reason);
     });
     if (!connected2) throw new Error('客户端1连接失败');

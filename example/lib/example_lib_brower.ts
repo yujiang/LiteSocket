@@ -31,7 +31,7 @@ client.onMessage(Message.HelloReply, (message: string) => write(`Server replied:
 
 connectButton.addEventListener('click', async () => {
     connectButton.disabled = true;
-    const connected = await client.connectServer(window.liteSocketExampleUrl, (reason, error) => {
+    const [connected] = await client.connectServer(window.liteSocketExampleUrl, (reason, error) => {
         write(`Disconnected: ${reason}${error ? ` (${String(error)})` : ''}`);
         connectButton.disabled = false;
         helloButton.disabled = true;

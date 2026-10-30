@@ -27,6 +27,7 @@ For applications that have already chosen WebSocket, this project provides a foc
 
 - **Explicit connection readiness:** `await connectPromise()` returns a connection result. A connection is ready only after the client receives the server's `system` message and completes protocol initialization.
 - **Separate lifecycle events from application messages:** `onEvent()` handles client lifecycle events, while `on()` handles messages. The server uses `onClient()` for client connection events.
+- **Different registration semantics for events and messages:** `LiteClient.onEvent()`, `LiteServer.onClient()`, and the server broadcast-exception `onEvent('exception')` support multiple listeners. Message handlers (`on()` / `onMessage()`) keep one handler per event name; registering again replaces it and logs a warning.
 - **RPC shaped around application needs:** `IOServer` and `IOClient` use message IDs, session IDs, and error codes. `asend()` returns a result tuple; `asende()` returns only the error code.
 - **Built-in diagnostics:** injectable logging, per-connection message observation, profiling, message size limits, and exception notifications.
 - **A focused maintenance scope:** the browser uses native WebSocket and the server uses `ws`, concentrating the implementation on connections, heartbeats, reconnection, and message dispatch.
@@ -40,8 +41,8 @@ This compares Socket.IO with `LiteServer` / `LiteClient`. Both provide bidirecti
 | Area | Socket.IO | LiteServer / LiteClient |
 | --- | --- | --- |
 | Transport | Engine.IO, with HTTP long-polling, WebSocket, and transport upgrades | WebSocket / WSS only; no long-polling fallback |
-| Message protocol | Socket.IO / Engine.IO protocols | JSON `{ eventName, data }` packets, dispatched by string event names |
-| Event registration | Multiple listeners per event | One handler per event or message; registering again replaces it and logs a warning |
+| Message protocol | Socket.IO / Engine.IO protocols | JSON `{ e, d }` packets, dispatched by string event names |
+| Event and message registration | Multiple listeners per event | Events support multiple listeners; each message name has one handler, and re-registration replaces it with a warning |
 | Connection handling | Connection events and connection management | `connectPromise()` waits for the `system` message before marking the protocol ready |
 | Automatic reconnection | Available in the client | Disabled by default; enable exponential backoff with `autoReconnect` |
 | Rooms and scaling | Rooms, namespaces, and multi-instance adapters | In-process rooms and broadcasts; no namespaces or cross-instance adapters |
@@ -91,7 +92,7 @@ lib/
     └── package.json
 ```
 
-The full library includes `LiteServer`, `IOServer`, room management, and all client APIs. Its runtime dependencies are `ws`, `chalk`, and `tslib`. The browser client includes `LiteClient`, `IOClient`, RPC, message types, error codes, logging, and profiling APIs, without server implementations.
+The full library includes `LiteServer`, `IOServer`, room management, and all client APIs. Its runtime dependencies are `ws` and `tslib`. The browser client includes `LiteClient`, `IOClient`, RPC, message types, error codes, logging, and profiling APIs, without server implementations.
 
 ## Complete Node.js library
 
@@ -146,10 +147,10 @@ client.onMessage(Message.HelloReply, (message: string) => {
 });
 
 async function main(): Promise<void> {
-    const connected = await client.connectServer('ws://localhost:8080', reason => {
+    const [connected, reason] = await client.connectServer('ws://localhost:8080', reason => {
         console.warn('Disconnected:', reason);
     });
-    if (!connected) throw new Error('Connection failed');
+    if (!connected) throw new Error(`Connection failed: ${reason}`);
     client.sendMsg(Message.Hello, 'browser');
     const [code, sum] = await client.asendMsg(Message.Add, 3, 5);
     if (code !== ErrorEnum.ErrorOk) throw new Error(`RPC failed: ${code}`);

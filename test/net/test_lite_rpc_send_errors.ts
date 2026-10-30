@@ -22,18 +22,20 @@ function invalidPayload(kind: string): unknown {
 for (const kind of ['oversized', 'circular', 'bigint']) {
     for (const method of ['asend', 'asende'] as const) {
         test(`${method} settles immediately when request encoding fails: ${kind}`, async context => {
-            const { server, client, connect, errors } = await createIOPair(context, { checktimeout: false }, { maxRecvLen: 256 });
+            const { server, client, connect } = await createIOPair(context, { checktimeout: false }, { maxRecvLen: 256 });
             const received: unknown[] = [];
+            const exceptionReasons: unknown[] = [];
             server.onCallback(messageId, (socket: IOServerSocket, data: unknown) => {
                 received.push(data);
                 return [ErrorEnum.ErrorOk, data];
             });
             await connect();
+            client.socket.onEvent('exception', reason => { exceptionReasons.push(reason); });
             const result = await within<FirstErrorRt | ErrorEnum>(client[method]([messageId, invalidPayload(kind)]), 'failed send settled', 300);
             assert.equal(Array.isArray(result) ? result[0] : result, ErrorEnum.settleSendFailure);
-            if (Array.isArray(result)) assert.equal(result[1], kind === 'oversized' ? msgSendMax : msgJsonStringError);
-            // 底层日志和 IOClient 共用 logger；只统计业务层的 exception 通知。
-            assert.equal(errors.filter(args => args[0] === 'IOClient socket exception').length, 1);
+            const reason = kind === 'oversized' ? msgSendMax : msgJsonStringError;
+            if (Array.isArray(result)) assert.equal(result[1], reason);
+            assert.deepStrictEqual(exceptionReasons, [reason]);
             assert.deepStrictEqual(client.callback.callbacks, {});
             assert.deepStrictEqual(await client.asend([messageId, 'healthy']), [ErrorEnum.ErrorOk, 'healthy']);
             assert.deepStrictEqual(received, ['healthy']);
@@ -41,6 +43,18 @@ for (const kind of ['oversized', 'circular', 'bigint']) {
         });
     }
 }
+
+test('external exception listeners do not replace IOClient settlement handler', async context => {
+    const { client, connect } = await createIOPair(context, { checktimeout: false });
+    await connect();
+    let exceptionReason: unknown;
+    client.socket.onEvent('exception', reason => { exceptionReason = reason; });
+
+    const result = await within(client.asend([messageId, invalidPayload('circular')]), 'failed send settled', 300);
+    assert.deepStrictEqual(result, [ErrorEnum.settleSendFailure, msgJsonStringError]);
+    assert.equal(exceptionReason, msgJsonStringError);
+    assert.deepStrictEqual(client.callback.callbacks, {});
+});
 
 // 一个请求发送失败只能结算自己的 session，不能 reset 掉同一连接上其他已发送的请求。
 test('failed send does not cancel another pending request', async context => {
@@ -91,15 +105,17 @@ test('server-to-client request send failures also settle without a timeout timer
 
 // 普通 send 没有 RPC session；它发送失败时只能报告 exception，不能误伤其他正在等待的 RPC。
 test('ordinary message send failures do not cancel a pending RPC', async context => {
-    const { server, client, connect, errors } = await createIOPair(context, { checktimeout: false }, { maxRecvLen: 256 });
+    const { server, client, connect } = await createIOPair(context, { checktimeout: false }, { maxRecvLen: 256 });
     const reply = deferred<FirstErrorRt>();
+    const exceptionReasons: unknown[] = [];
     let received = false;
     server.onCallback(messageId, () => { received = true; return reply.promise; });
     await connect();
+    client.socket.onEvent('exception', reason => { exceptionReasons.push(reason); });
     const pending = client.asend([messageId]);
     await waitUntil(() => received, 'pending request before ordinary send');
     client.send([messageId, invalidPayload('oversized')]);
-    assert.equal(errors.filter(args => args[0] === 'IOClient socket exception').length, 1);
+    assert.deepStrictEqual(exceptionReasons, [msgSendMax]);
     assert.deepStrictEqual(Object.keys(client.callback.callbacks), ['1']);
     reply.resolve([ErrorEnum.ErrorOk, 'not cancelled']);
     assert.deepStrictEqual(await within(pending, 'pending request preserved'), [ErrorEnum.ErrorOk, 'not cancelled']);

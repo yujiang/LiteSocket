@@ -79,7 +79,7 @@ test('old connection responses do not reach a replacement connection', async con
     await connect();
     const old = client.asend([messageId, 'old']);
     await waitUntil(() => replies.has('old'), 'old request received');
-    assert(await client.connectServer(url, () => {}));
+    assert((await client.connectServer(url, () => {}))[0]);
     assert.equal((await within(old, 'old request disconnected'))[0], ErrorEnum.Callback_disconnect);
     const current = client.asend([messageId, 'new']);
     await waitUntil(() => replies.has('new'), 'new request received');

@@ -25,7 +25,7 @@ test('game room namespaces cannot collide and leave/dismiss stop broadcasts', as
     for (const [index, game] of games.entries()) {
         assert(await within(game.start(`ws://127.0.0.1:${gate.games.io.port}`), 'game registration'));
         const client = clients[index];
-        assert(await within(client.connectServer(`ws://127.0.0.1:${gate.clients.io.port}`, () => {}), 'client connect'));
+        assert((await within(client.connectServer(`ws://127.0.0.1:${gate.clients.io.port}`, () => {}), 'client connect'))[0]);
         await within(client.login(), 'login');
         assert.deepStrictEqual(await within(client.enterGame(game.id, 123 + index), 'enter game'), [ErrorEnum.ErrorOk]);
         client.onBroadcast(MsgClientEnum.bc_chat, (id: number, text: string) => { received[index].push([id, text]); });

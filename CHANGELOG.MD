@@ -6,6 +6,12 @@
 ## 0.1.4
 添加了game/gate-game一套范例, 只作为示例而不导出lib
 
+## 0.1.6
+event(事件)改为多播
+
+## 0.1.7
+JSDOC by AI
+
 # 其他
 
 ## publish

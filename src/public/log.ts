@@ -1,5 +1,8 @@
 import { colors } from "./color";
 
+/**
+ * Injectable logging contract; console implements all required methods.
+ */
 export interface LiteLogger {
 	info(...args: any[]): void;
     log(...args: any[]): void;
@@ -8,6 +11,9 @@ export interface LiteLogger {
 	debug(...args: any[]): void;
 }
 
+/**
+ * Creates a logger that discards every entry.
+ */
 export function createSliceLogger(){
     return {
         info(...args: any[]) {},
@@ -18,6 +24,9 @@ export function createSliceLogger(){
     }
 }
 
+/**
+ * Creates a console logger prefixing entries with the supplied label.
+ */
 export function createHeadLogger(head: string){
     return {
         info(...args: any[]) {
@@ -40,6 +49,11 @@ export function createHeadLogger(head: string){
 
 const star = '***************************************************************';
 
+/**
+ * Writes a highlighted message between separator lines.
+ * @param logger - Logger implementing LiteLogger; console is supported.
+ * @param msg - Numeric message ID or mutable business tuple, as specified by the signature.
+ */
 export function logStar(logger: LiteLogger, msg: string){
 	logger.log(colors.green(star));
 	logger.log(colors.yellow(msg));

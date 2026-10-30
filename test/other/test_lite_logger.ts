@@ -73,10 +73,9 @@ test('registration warnings use the custom logger instead of console', context =
     server.onMessage('probe', () => {});
     server.onMessage('probe', () => {});
     server.onClient('client-connect', () => {});
-    server.onClient('client-connect', () => {});
     server.onEvent('exception', () => {});
     server.onEvent('exception', () => {});
-    assert.equal(entries.length, 3);
+    assert.equal(entries.length, 1);
     assert(entries.every(entry => entry.level === 'warn'));
     assert.equal(warnings.mock.callCount(), 0);
 });

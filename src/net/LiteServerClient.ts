@@ -23,17 +23,38 @@ function raw2String(raw: RawData): string {
 }
 
 
+/**
+ * One accepted connection with local message handlers, room membership, and diagnostics.
+ */
 export class LiteServerClient extends LiteSocket implements CommonSocket{
+	/**
+	 * Server-assigned connection ID, unique within this server instance.
+	 */
 	id: number;
+    /**
+     * Application-owned data attached to this connection.
+     */
     customData: any //存储数据用
 
+	/**
+	 * Owning transport server.
+	 */
 	readonly server: LiteServer;
+	/**
+	 * TCP peer address; may contain an IPv4-mapped IPv6 prefix.
+	 */
 	readonly remoteAddress: string;
 	private handlers = new Map<string | symbol, (data?: any) => void>();
 	private disposed = false;
 	private messageTokens = 0;
 	private lastMessageTime = performance.now();
 
+	/**
+	 * Creates LiteServerClient with the supplied dependencies and configuration.
+	 * @param name - Diagnostic label.
+	 * @param logger - Logger implementing LiteLogger; console is supported.
+	 * @param id - Connection ID or RPC correlation number, as specified by this API.
+	 */
 	constructor(name: string, logger: LiteLogger, ws: WebSocket, server: LiteServer, id: number, remoteAddress = '') {
 		super(name, logger);
 		this.ws = ws;
@@ -54,6 +75,9 @@ export class LiteServerClient extends LiteSocket implements CommonSocket{
 		});
 	}
 
+	/**
+	 * Reports whether this connection is usable; clients additionally require the system handshake.
+	 */
 	override isConnected(): boolean {
 		return !this.disconnected && !this.disposed && super.isConnected();
 	}
@@ -62,6 +86,12 @@ export class LiteServerClient extends LiteSocket implements CommonSocket{
 		return this.isConnected();
 	}
 
+	/**
+	 * Registers one connection-local transport handler per event; duplicates replace it.
+	 * @param event - Transport category or lifecycle name, as specified by this API.
+	 * @param handler - Handler for this registration.
+	 * @param data - Payload; session sending and business dispatch may modify the array in place.
+	 */
 	on(event: string | symbol, handler: (data?: any) => void): this {
 		if (this.handlers.has(event)) {
 			this.logger.warn(this.logHead('on', 'warn'), event, 'already registered');
@@ -70,14 +100,26 @@ export class LiteServerClient extends LiteSocket implements CommonSocket{
 		return this;
 	}
 
+	/**
+	 * Adds local room membership; room managers create missing rooms.
+	 * @param room - Process-local room name.
+	 */
 	join(room: string): void {
 		if (this.isConnected()) this.server.joinRoom(room, this);
 	}
 
+	/**
+	 * Removes room membership; managers delete rooms left empty.
+	 * @param room - Process-local room name.
+	 */
 	leave(room: string): void {
 		this.server.leaveRoom(room, this);
 	}
 
+	/**
+	 * Clears local handlers/resources once; false means already disposed. Does not itself close the transport.
+	 * @param reason - Diagnostic or close reason.
+	 */
 	dispose(reason?: string): boolean {
 		if (this.disposed) return false;
 		this.disposed = true;
@@ -86,12 +128,21 @@ export class LiteServerClient extends LiteSocket implements CommonSocket{
 	}
 
 	//不是消息是事件
+	/**
+	 * Dispatches a lifecycle or diagnostic event to observers.
+	 * @param eventName - Transport category or lifecycle name.
+	 * @param reason - Diagnostic or close reason.
+	 */
 	emitEvent(eventName: clientEvent, reason?: string | number, err?: any){
 		this.server.emitClient(eventName, this, reason, err);
 	}
 
 	private disconnected = false;
 	// 确保仅仅一次
+	/**
+	 * Reports established connection loss at most once for the current connection.
+	 * @param reason - Diagnostic or close reason.
+	 */
 	emitDisconnect(reason: DisconnectReason, err?: any) {
 		if (this.disconnected) return;
 		this.disconnected = true;
@@ -100,6 +151,11 @@ export class LiteServerClient extends LiteSocket implements CommonSocket{
 	}
 
 	// 广播给除了自己以外的所有客户端
+	/**
+	 * Broadcasts to all connected peers except this connection.
+	 * @param event - Transport category or lifecycle name, as specified by this API.
+	 * @param data - Payload; session sending and business dispatch may modify the array in place.
+	 */
 	broadcastNotSelf(event: string, data: any): void {
 		this.server.broadcast(event, data, (c) => c !== this);
 	}
@@ -147,20 +203,35 @@ export class LiteServerClient extends LiteSocket implements CommonSocket{
 		return true;
 	}
 
+	/**
+	 * Returns the outgoing JSON string-length limit in UTF-16 code units.
+	 */
 	override maxSendLen(): number {
 		return this.server.opts.maxSendLen;
 	}
 
+	/**
+	 * Returns the incoming JSON string-length limit in UTF-16 code units.
+	 */
 	override maxRecvLen(): number {
 		return this.server.opts.maxRecvLen;
 	}
 
+	/**
+	 * Immediately terminates the Node.js transport without a closing handshake.
+	 */
 	terminate(){
 		this.ws.terminate();
 	}
 
+    /**
+     * Optional logger for incoming business-message observation.
+     */
     observeLogger?: LiteLogger;
 	// 暂时用console代替
+	/**
+	 * Attaches incoming-message diagnostics; server lookup returns whether the connection exists.
+	 */
 	observe(log:LiteLogger) {
 		this.observeLogger = log;
 	}

@@ -30,7 +30,7 @@ export async function createIOPair(context: TestContext, param: ClientParam = {}
     assert.deepStrictEqual(await within(server.listen(0, opts), 'RPC server listen'), [true]);
     const url = getWsUrl('127.0.0.1', server.io.port, !!opts.keyfile && !!opts.certfile);
     const connect = async () => {
-        assert(await within(client.connectServer(url, () => {}), 'RPC client connect'));
+        assert((await within(client.connectServer(url, () => {}), 'RPC client connect'))[0]);
     };
     const peer = () => {
         const socket = server.findById(client.socket.getServerId());

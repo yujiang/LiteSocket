@@ -38,7 +38,7 @@ async function globalRejectionScenario(direction: string) {
         }
         server.onCallback(messageId + 2, () => [ErrorEnum.ErrorOk, 'healthy']);
         assert.deepStrictEqual(await server.listen(0), [true]);
-        assert(await client.connectServer(`ws://127.0.0.1:${server.io.port}`, () => {}));
+        assert((await client.connectServer(`ws://127.0.0.1:${server.io.port}`, () => {}))[0]);
         if (direction === 'server') {
             client.send([messageId]);
             client.send([messageId + 1]);
