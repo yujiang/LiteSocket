@@ -35,6 +35,8 @@ node --test .test-build/test/net2/test_lite_errorenum.js
 
 ## 按改动选择检查
 
+库内的性能统计、限速、RPC 超时和心跳统一使用 `performance.now()`，单位均为毫秒。`lastPong`、待处理 RPC 的发送时间以及 `SessionCallback.getTime()` 都是本地单调时钟值，不是 Unix 时间戳；手动调用 `heartBreak()` 或 `checkTimeout()` 时，也应传入同一时钟的值。心跳 RTT 只比较本端发出并由对端原样带回的起始值，不比较两个进程各自的时钟。`test_lite_clock.ts` 验证系统时间跳变不影响这些计时。
+
 | 改动范围 | 对应覆盖 | 验证命令 |
 | --- | --- | --- |
 | JSON 协议、消息格式、发送失败 | `test_lite_protocol`、`test_lite_invalid_packets`、`test_lite_rpc_send_errors` | `pnpm test` |

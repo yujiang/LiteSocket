@@ -95,10 +95,10 @@ export abstract class SessionCallback {
 	}
 
 	/**
-	 * Returns the wall-clock timestamp in milliseconds used by timeout checks.
+	 * Returns the monotonic timestamp in milliseconds used by timeout checks.
 	 */
 	static getTime(): number {
-		return Date.now();
+		return performance.now();
 	}
 
 	// 用这个函数来简化一些写法
@@ -200,8 +200,8 @@ export abstract class SessionCallback {
 	// }
 
 	/**
-	 * Settles expired requests using a wall-clock millisecond timestamp; returns the number expired.
-	 * @param now - Wall-clock timestamp in milliseconds, usually Date.now().
+	 * Settles expired requests using a monotonic millisecond timestamp; returns the number expired.
+	 * @param now - Monotonic timestamp in milliseconds, usually performance.now().
 	 * @returns Number of requests expired during this check.
 	 */
 	checkTimeout(now: number): number {

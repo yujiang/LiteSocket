@@ -1,4 +1,5 @@
-import { ErrorEnum, IOClient } from '@mosnpm/litesocket/client';
+import { ErrorEnum, IOClient, setMsgNameFunc } from '@mosnpm/litesocket/client';
+import { getMsgName, Message } from './example_lib_msg';
 
 declare global {
     interface Window {
@@ -6,11 +7,7 @@ declare global {
     }
 }
 
-enum Message {
-    Hello = 960001,
-    HelloReply,
-    Add,
-}
+setMsgNameFunc(getMsgName);
 
 const output = document.querySelector<HTMLPreElement>('#output');
 const serverUrl = document.querySelector<HTMLElement>('#server-url');

@@ -18,16 +18,22 @@ export function isProfile(): boolean {
 	return profileGlobal;
 }
 
-// 使用 performance.now() 有问题, ms没有更新now
+export function perfNow(){
+	return performance.now();
+}
+
+export function dateNow(){
+	return Date.now();
+}
 
 /**
  * Returns a monotonic timestamp, or milliseconds elapsed since a nonzero timestamp.
  */
 export function hrtime(time?: number) {
 	if (!time) {
-		return performance.now();
+		return perfNow();
 	}
-	return performance.now() - time;
+	return perfNow() - time;
 }
 
 let profileLogger:LiteLogger = console;

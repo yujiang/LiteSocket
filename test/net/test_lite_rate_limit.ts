@@ -1,6 +1,5 @@
 import { strict as assert } from 'node:assert';
 import { once } from 'node:events';
-import { performance } from 'node:perf_hooks';
 import { test, TestContext } from 'node:test';
 import { LiteServer } from '../../src/net/LiteServer';
 import { LiteSocket } from '../../src/net/LiteSocket';
@@ -101,8 +100,8 @@ test('heartbeat packets do not consume message tokens', async context => {
     });
     send(1);
     for (let index = 0; index < 5; index++) {
-        peer.ws.emit('message', Buffer.from(LiteSocket.encodeMessage('ping', Date.now())));
-        peer.ws.emit('message', Buffer.from(LiteSocket.encodeMessage('pong', [Date.now(), Date.now()])));
+        peer.ws.emit('message', Buffer.from(LiteSocket.encodeMessage('ping', performance.now())));
+        peer.ws.emit('message', Buffer.from(LiteSocket.encodeMessage('pong', [performance.now(), performance.now()])));
     }
     assert(peer.connected);
     advance(1000);

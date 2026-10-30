@@ -464,10 +464,10 @@ export class MsgHandleCB extends MsgHandle {
 		data.shift();
 		let rt = msgfunc.trySocket(socket, key, data);
 		if (isPromise(rt)) {
-			const time = Date.now();
+			const time = performance.now();
 			try {
 				rt = await rt;
-				const timeout = Date.now() - time;
+				const timeout = performance.now() - time;
 				if (timeout > 1000) {
 					this.logger.warn('handle_await timeout', key, getMsgName(key), 'cost', timeout);
 					// 不敢随意stringfy(data),

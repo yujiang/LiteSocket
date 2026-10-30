@@ -1,7 +1,6 @@
 import { strict as assert } from 'node:assert';
 import { once } from 'node:events';
 import { createServer, Socket } from 'node:net';
-import { performance } from 'node:perf_hooks';
 import { TestContext } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { WebSocket } from 'ws';

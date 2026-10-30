@@ -149,9 +149,9 @@ export abstract class LiteSocket {
 	private delays: number[] = [];
 
 	/**
-	 * Wall-clock timestamp of the latest accepted pong, in milliseconds.
+	 * Monotonic timestamp of the latest accepted pong, in milliseconds.
 	 */
-	lastPong: number = Date.now();
+	lastPong: number = performance.now();
 
 	// 仅用于调试
 	private _stopPong = false;
@@ -168,8 +168,8 @@ export abstract class LiteSocket {
 	 */
 	onPong(data: [number, number]) {
         const [start, peer] = data;
-        // peer 可以用来判定加速?
-		const now = Date.now();
+        // start is echoed from this endpoint; peer uses its own clock origin and is not compared.
+		const now = performance.now();
 		this.delay = (now - start) / 2; //一来一回
 		// 保持10个延迟值，取平均值
 		if (this.delays.push(this.delay) > 10) {
@@ -184,14 +184,14 @@ export abstract class LiteSocket {
 	onPing(time: number) {
 		if (this._stopPong) return;
 		if (this.isConnected()) {
-			this.emit('pong', [time, Date.now()]);
+			this.emit('pong', [time, performance.now()]);
 		}
 	}
 
 	// return error str
 	/**
 	 * Checks pong age and sends a ping; returns pong-timeout when expired, otherwise an empty string.
-	 * @param now - Wall-clock timestamp in milliseconds, usually Date.now().
+	 * @param now - Monotonic timestamp in milliseconds, usually performance.now().
 	 * @param heartbeatTimeout - Maximum accepted pong age in milliseconds.
 	 */
 	heartBreak(now: number, heartbeatTimeout: number) {

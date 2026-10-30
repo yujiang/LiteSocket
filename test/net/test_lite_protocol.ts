@@ -358,8 +358,8 @@ test('bidirectional heartbeat stays connected and does not reach application han
     await waitUntil(() => client.lastPong > clientLastPong && peer.lastPong > serverLastPong, 'both sides receive pong');
     await delay(900);
     assertConnected(client, peer);
-    assert(Date.now() - client.lastPong < options.heartbeatTimeout);
-    assert(Date.now() - peer.lastPong < options.heartbeatTimeout);
+    assert(performance.now() - client.lastPong < options.heartbeatTimeout);
+    assert(performance.now() - peer.lastPong < options.heartbeatTimeout);
     assert(Number.isFinite(client.getArgDelay()) && client.getArgDelay() >= 0);
     assert(Number.isFinite(peer.getArgDelay()) && peer.getArgDelay() >= 0);
     assert.equal(applicationMessages, 0);

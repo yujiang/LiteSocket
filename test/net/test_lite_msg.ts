@@ -63,10 +63,10 @@ async function example() {
         console.log('客户端 await asend 得到结果：', sum);
 
         console.log('\n3. 异步消息超时（检查周期为 1 秒，请稍候）');
-        const started = Date.now();
+        const started = performance.now();
         const [timeoutCode] = await client.asend([timeoutMessage], 1000);
         if (timeoutCode !== ErrorEnum.Callback_timeout) throw new Error(`预期超时，实际错误码：${timeoutCode}`);
-        console.log(`客户端收到 Callback_timeout，实际等待 ${Date.now() - started}ms`);
+        console.log(`客户端收到 Callback_timeout，实际等待 ${performance.now() - started}ms`);
         console.log('超时参数是 1000ms，但需等到下一次轮询检查才会返回。');
     } finally {
         client.destroy('example finished');

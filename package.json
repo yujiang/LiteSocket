@@ -1,6 +1,6 @@
 {
   "name": "@mosnpm/litesocket",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Lightweight WebSocket client and server with RPC support",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",
@@ -35,6 +35,9 @@
   "keywords": [],
   "author": "",
   "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
   "packageManager": "pnpm@12.16.1",
   "types": "./lib/full/index.d.ts",
   "exports": {
@@ -52,6 +55,7 @@
   },
   "files": [
     "lib",
+    "README.md",
     "README_CN.md"
   ],
   "repository": {

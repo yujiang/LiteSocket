@@ -21,9 +21,9 @@ async function within(promise, description) {
 }
 
 async function waitUntil(predicate, description) {
-    const deadline = Date.now() + 3000;
+    const deadline = performance.now() + 3000;
     while (!predicate()) {
-        assert(Date.now() < deadline, `Timed out: ${description}`);
+        assert(performance.now() < deadline, `Timed out: ${description}`);
         await new Promise(resolve => setTimeout(resolve, 5));
     }
 }

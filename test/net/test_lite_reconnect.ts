@@ -115,7 +115,7 @@ test('heartbeat timeout reconnects through the same retry path', async context =
     const client = createClient(context, { heartbeatInterval: 20, heartbeatTimeout: 100 });
     assert.deepStrictEqual(await client.connectPromise(url), [true, '']);
     server.findById(client.getServerId()).stopPong(true);
-    client.lastPong = Date.now() - 200;
+    client.lastPong = performance.now() - 200;
     await client.events.waitForCount('connect', 2);
     assert.equal(client.events.count('pong-timeout'), 1);
     assert.equal(client.events.count('disconnect'), 1);

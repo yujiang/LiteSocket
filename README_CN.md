@@ -4,6 +4,12 @@
 
 同一套源码生成两份库：完整 Node.js 库，以及只使用浏览器原生 WebSocket 的客户端库。
 
+## 运行环境
+
+- **Node.js：最低支持版本为 20。**
+- **浏览器：**需要支持 ES2021、原生 WebSocket 及客户端使用的相关 Web API。
+- JavaScript 编译目标为 ES2021。部分浏览器集成测试需要 Node.js 22 或更高版本，与库的最低运行版本分开说明。
+
 ## 设计启发
 
 LiteSocket 的底层通信层 `LiteServer` / `LiteClient` 受到 [Socket.IO](https://socket.io/) 的启发，提供连接生命周期、事件消息、心跳和房间广播。在此基础上，`IOServer` / `IOClient` 进一步简化业务接口，并扩展消息分发、RPC、错误码和诊断能力，主要用于游戏客户端与 Node.js 服务端之间的交互。
@@ -159,6 +165,8 @@ async function main(): Promise<void> {
 
 void main().catch(console.error);
 ```
+
+`setMsgNameFunc()` 可将数字 ID 映射为诊断日志中的名称。浏览器和服务端是独立运行环境，需要分别注册；它不会改变线上消息协议。
 
 浏览器 TypeScript 配置需要包含 `DOM` 类型，并可使用 `moduleResolution: "bundler"` 解析 `/client` 子入口。Node.js 客户端使用同样的 `IOClient` 接口，从 `@mosnpm/litesocket` 导入即可。
 

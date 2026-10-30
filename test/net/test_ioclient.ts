@@ -268,8 +268,8 @@ test('IOClient owns the timeout interval and releases it on destroy', async cont
     assert.equal(interval.timer.hasRef(), false);
     const pending = client.asend([messageId], 10);
     await waitUntil(() => received() === 1, 'timeout request');
-    const now = Date.now();
-    context.mock.method(Date, 'now', () => now + 100);
+    const now = performance.now();
+    context.mock.method(performance, 'now', () => now + 100);
     interval.run();
     assert.equal((await within(pending, 'timed out request'))[0], ErrorEnum.Callback_timeout);
     assert.equal(check.mock.callCount(), 1);

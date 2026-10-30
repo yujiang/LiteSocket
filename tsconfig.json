@@ -1,38 +1,23 @@
 {
-	"compilerOptions": {
-        //"useDefineForClassFields": false,	
-        "allowJs": false,
-        //https://www.typescriptlang.org/tsconfig#esModuleInterop
-
-        // 因为用到 import * as MD5 from 'md5'; 不能开启下面的。
-        // "esModuleInterop": true,  // 让 default 导出更易用
-        // "moduleResolution": "node",   // 确保能解析 node_modules
-        "strict": true,
-        "strictNullChecks": false,
-        "moduleDetection": "force",
-
-        "allowSyntheticDefaultImports": true,
-        "experimentalDecorators": true,
-        "forceConsistentCasingInFileNames": true,
-        "ignoreDeprecations": "5.0",
-        "importHelpers": true,
-        //"importsNotUsedAsValues": "error",
-        "lib": ["es2021"],
-        "noFallthroughCasesInSwitch": true,
-        "noImplicitOverride": true,
-        "noImplicitThis": true,
-        //"noUnusedLocals":true,
-        "module": "NodeNext",
-        "moduleResolution": "nodenext",
-        "outDir": "bin-debug",
-        //"esModuleInterop": true,
-        "skipLibCheck": true,
-        //"verbatimModuleSyntax":true,
-        "sourceMap": true,
-        "target": "ES2021"
-    },
-	"$schema": "https://json.schemastore.org/tsconfig",
-	"display": "Recommended",
-	"include": ["src"],
-	"exclude": ["src/browser", "lib", "node_modules"]
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Recommended",
+  "compilerOptions": {
+    "target": "ES2021",
+    "lib": ["ES2021"],
+    "module": "NodeNext",
+    "moduleDetection": "force",
+    "strict": true,
+    "strictNullChecks": false,
+    "useDefineForClassFields": false,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+    "forceConsistentCasingInFileNames": true,
+    "importHelpers": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "noEmitOnError": true,
+    "outDir": "bin-debug"
+  },
+  "include": ["src"],
+  "exclude": ["src/browser", "lib", "node_modules"]
 }

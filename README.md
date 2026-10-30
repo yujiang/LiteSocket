@@ -4,6 +4,12 @@
 
 One codebase, two builds: a complete Node.js library and a browser client that uses the native WebSocket API.
 
+## Runtime requirements
+
+- **Node.js: 20 or later.**
+- **Browsers:** support for ES2021, native WebSocket, and the Web APIs used by the client.
+- The JavaScript compilation target is ES2021. Some browser integration tests require Node.js 22 or later; this is separate from the library's minimum runtime version.
+
 ## Inspiration
 
 The low-level transport layer, `LiteServer` / `LiteClient`, is inspired by [Socket.IO](https://socket.io/), providing connection lifecycle events, messages, heartbeats, and room broadcasts. Built on that layer, `IOServer` / `IOClient` simplify application APIs and add message dispatch, RPC, error codes, and diagnostics. The main use case is communication between game clients and Node.js servers.
@@ -159,6 +165,8 @@ async function main(): Promise<void> {
 
 void main().catch(console.error);
 ```
+
+`setMsgNameFunc()` can map numeric IDs to names in diagnostic logs. Register it separately in each runtime (browser and server); it does not change the wire protocol.
 
 Include `DOM` types in your browser TypeScript configuration; `moduleResolution: "bundler"` can resolve the `/client` entry point. Node.js clients use the same `IOClient` API, imported from `@mosnpm/litesocket`.
 

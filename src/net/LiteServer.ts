@@ -341,7 +341,7 @@ export class LiteServer {
 	}
 
 	private performHeartbeatCheck(): void {
-		const now = Date.now();
+		const now = performance.now();
 		this.clients.forEach((client) => {
 			const rt = client.heartBreak(now, this.opts.heartbeatTimeout)
 			if (rt) {

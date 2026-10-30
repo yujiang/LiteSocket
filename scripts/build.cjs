@@ -29,7 +29,7 @@ async function main() {
         clean('client');
         tsc('tsconfig.browser.json');
         const common = {
-            entryPoints: ['src/client.ts'], bundle: true, platform: 'browser', target: 'es2021',
+            entryPoints: ['src/client.ts'], bundle: true, platform: 'browser', target: 'es2022',
             tsconfig: 'tsconfig.browser.json', sourcemap: true, metafile: true,
         };
         for (const [format, filename] of [['esm', 'index.js'], ['iife', 'litesocket.global.js']]) {

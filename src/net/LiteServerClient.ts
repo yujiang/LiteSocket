@@ -1,7 +1,6 @@
 // LiteServerClient 外部不需要关心, LiteServer使用
 
 import { WebSocket, RawData } from 'ws';
-import { performance } from 'node:perf_hooks';
 import { clientEvent, LiteServer } from './LiteServer';
 import type { MessageRateLimit } from './LiteNet';
 import type { LiteLogger } from "../public/log";

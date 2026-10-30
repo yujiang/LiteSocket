@@ -1,17 +1,13 @@
 import { createServer } from 'node:http';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
-import { ErrorEnum, IOServer } from '@mosnpm/litesocket';
+import { ErrorEnum, IOServer, setMsgNameFunc } from '@mosnpm/litesocket';
 import type { IOServerSocket } from '@mosnpm/litesocket';
-
-enum Message {
-    Hello = 960001,
-    HelloReply,
-    Add,
-}
+import { getMsgName, Message } from './example_lib_msg';
 
 async function main(): Promise<void> {
     const root = process.cwd();
+    setMsgNameFunc(getMsgName);
     const server = new IOServer('library-example', console);
     server.onMessage(Message.Hello, (socket: IOServerSocket, name: string) => {
         socket.sendMsg(Message.HelloReply, `Hello, ${name}!`);

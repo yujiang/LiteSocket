@@ -175,7 +175,7 @@ export class IOServer extends IOServerBase {
             const interval = Number.isFinite(configuredInterval) && configuredInterval > 0 ? configuredInterval : 1000;
             // 所有连接共用一个超时检查器，避免为每个 socket 创建定时器。
             this.checkTimer = setInterval(() => {
-                const now = Date.now();
+                const now = performance.now();
                 for (const socket of this.io?.clients.values() ?? []) {
                     if (socket instanceof IOServerSocket) socket.session?.checkTimeout(now);
                 }

@@ -11,7 +11,7 @@ buildSync({
     entryPoints: ['example/lib/example_lib_brower.ts'],
     bundle: true,
     external: ['@mosnpm/litesocket/client'],
-    format: 'esm', platform: 'browser', target: 'es2021', sourcemap: true,
+    format: 'esm', platform: 'browser', target: 'es2022', sourcemap: true,
     outfile: '.example-build/example/lib/example_lib_brower.js',
 });
 console.log('Built Node.js and browser lib examples');

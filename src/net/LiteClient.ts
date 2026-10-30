@@ -320,7 +320,7 @@ export class LiteClient extends LiteSocket implements CommonClient {
 		this.url = url;
 		this.serverId = 0;
 		this.sys = undefined;
-		this.lastPong = Date.now();
+		this.lastPong = performance.now();
 		clearInterval(this.heartbeatTimer);
 		this.heartbeatTimer = null;
 		if (previous) {
@@ -466,7 +466,7 @@ export class LiteClient extends LiteSocket implements CommonClient {
 			attempt.connected = true;
 			this.retries = 0;
 			this.closeTimeout(attempt);
-			this.lastPong = Date.now();
+			this.lastPong = performance.now();
 			this.startHeartbeat(attempt);
 			attempt.resolve([true, '']);
 			this.emitEvent('connect', this.opts.autoReconnect ? ++this.connectedTimes : undefined);
@@ -622,7 +622,7 @@ export class LiteClient extends LiteSocket implements CommonClient {
 		this.heartbeatTimer = setInterval(() => {
 			if (this.attempt !== attempt) return;
 			// 心跳检测逻辑
-			const now = Date.now();
+			const now = performance.now();
 			const rt = this.heartBreak(now, this.opts.heartbeatTimeout);
 			if (rt) {
 				this.emitDisconnect(rt);

@@ -15,7 +15,7 @@ enum myMsg {
  s2c_rpc_mulMessage ,
 }
 
-export function getMsgName(id: number): string {
+function getMsgName(id: number): string {
     // console.log('getMsgName:', id);
     return myMsg[id];
 }
