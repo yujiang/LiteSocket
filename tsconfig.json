@@ -16,6 +16,7 @@
     "skipLibCheck": true,
     "sourceMap": true,
     "noEmitOnError": true,
+    "rootDir": "src",
     "outDir": "bin-debug"
   },
   "include": ["src"],
