@@ -26,9 +26,12 @@ export class ClientData {
 export class GateClients extends IOServer {
 	route: GateGames;
 
+	override initSocketData(socket: IOServerSocket): void{
+		socket.customData = new ClientData();
+	}
+
 	override bindSocketMsg(socket: IOServerSocket): void{
 		// 重定向event
-		socket.customData = new ClientData();
 		this.bindRoute(socket);
 	}
 

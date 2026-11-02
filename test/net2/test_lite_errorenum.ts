@@ -56,7 +56,7 @@ for (const { code, setup } of cases) {
         }
         server.onCallback(messageId + 1, () => [ErrorEnum.ErrorOk, 'next']);
         await connect();
-        const request: msgData = setup === 'query' ? [MsgId.MSG_SYSTEM_QUERYHTTPSERVER, 'missing'] : [messageId];
+        const request: msgData = setup === 'query' ? [MsgId.MSG_SYSTEM_QUERY_VAR, 'missing'] : [messageId];
         const result = await within(client.asend(request), setup);
         checkCode(result, code);
         if (setup === 'success') assert.deepStrictEqual(result, [ErrorEnum.ErrorOk, 'healthy']);

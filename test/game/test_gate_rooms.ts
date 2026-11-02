@@ -33,7 +33,7 @@ test('game room namespaces cannot collide and leave/dismiss stop broadcasts', as
     async function flush() {
         // 同一连接的查询响应确认之前的房间操作已在 Gate 执行。
         for (const game of games) {
-            await within(game.gate.asendCallback(MsgId.MSG_SYSTEM_QUERYHTTPSERVER, 'name'), 'room operation barrier');
+            await within(game.gate.asendCallback(MsgId.MSG_SYSTEM_QUERY_VAR, 'name'), 'room operation barrier');
         }
         await Promise.all(clients.map(async client => {
             const barrier = deferred<void>();

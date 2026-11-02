@@ -5,6 +5,7 @@ import { LiteServer } from '../../src/net/LiteServer';
 import { LiteSocket } from '../../src/net/LiteSocket';
 import { LiteOptionsInput, SocketCloseCode } from '../../src/net/LiteNet';
 import { ErrorEnum } from '../../src/net/ErrorEnum';
+import { perfNow } from '../../src/public/profile';
 import { createIOPair } from '../io_test_helpers';
 import { connect, createClient, createLiteServer, within } from '../lite_test_helpers';
 
@@ -100,8 +101,8 @@ test('heartbeat packets do not consume message tokens', async context => {
     });
     send(1);
     for (let index = 0; index < 5; index++) {
-        peer.ws.emit('message', Buffer.from(LiteSocket.encodeMessage('ping', performance.now())));
-        peer.ws.emit('message', Buffer.from(LiteSocket.encodeMessage('pong', [performance.now(), performance.now()])));
+        peer.ws.emit('message', Buffer.from(LiteSocket.encodeMessage('ping', perfNow())));
+        peer.ws.emit('message', Buffer.from(LiteSocket.encodeMessage('pong', [perfNow(), perfNow()])));
     }
     assert(peer.connected);
     advance(1000);

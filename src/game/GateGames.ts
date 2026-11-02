@@ -13,8 +13,7 @@ export interface GameData  {
 export class GateGames extends IOServer {
 	route: GateClients;
 
-    override onClientConnected(socket: IOServerSocket): void {
-        super.onClientConnected(socket);
+    override initSocketData(socket: IOServerSocket): void {
 		socket.customData = {
 			gameid: 0,
 		}

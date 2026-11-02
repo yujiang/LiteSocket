@@ -3,7 +3,7 @@
 import { setTimeout as delay } from "node:timers/promises";
 import { LiteOptionsInput } from "./LiteNet";
 import { LiteLogger, logStar } from "../public/log";
-import { ClientSocketClass, ListenResult, LiteServer } from "./LiteServer";
+import { clientEvent, ClientSocketClass, ListenResult, LiteServer, SocketEventFunc } from "./LiteServer";
 import { msgData } from "../public/Depends";
 import { MsgHandle, MsgHandleCB, SocketParamEnum } from "./msg";
 import { NetEventEnum, MsgId } from "./msgid";
@@ -11,6 +11,8 @@ import { TypeHandle } from "./TypeHandle";
 import { LiteServerClient } from "./LiteServerClient";
 import { IOServerSocket } from "./IOServerSocket";
 import { ErrorEnum, EventReturn, FirstErrorRt } from "./ErrorEnum";
+import { perfNow } from "../public/profile";
+import { SocketReason } from "./LiteSocket";
 
 /**
  * Ordinary server handler receiving the connection before business arguments.
@@ -20,6 +22,8 @@ export type LiteMessageSocketHandler = (arg0: IOServerSocket, ...arg1: any[]) =>
  * Server RPC handler receiving the connection and returning an error-first result.
  */
 export type LiteCallbackSocketHandler = (arg0: IOServerSocket, ...arg1: any[]) => EventReturn;
+
+export type IOSocketEventFunc = (client: IOServerSocket, reason: SocketReason, err?: any) => void;
 
 /**
  * Server RPC timeout polling configuration, separate from transport options.
@@ -150,6 +154,7 @@ export class IOServer extends IOServerBase {
      */
     param: ServerParam;
     private checkTimer?: ReturnType<typeof setInterval>;
+    private clientEventHandlers: Array<{ event: clientEvent; handler: IOSocketEventFunc }> = [];
 
     /**
      * Creates IOServer with the supplied dependencies and configuration.
@@ -175,7 +180,7 @@ export class IOServer extends IOServerBase {
             const interval = Number.isFinite(configuredInterval) && configuredInterval > 0 ? configuredInterval : 1000;
             // 所有连接共用一个超时检查器，避免为每个 socket 创建定时器。
             this.checkTimer = setInterval(() => {
-                const now = performance.now();
+                const now = perfNow();
                 for (const socket of this.io?.clients.values() ?? []) {
                     if (socket instanceof IOServerSocket) socket.session?.checkTimeout(now);
                 }
@@ -193,7 +198,7 @@ export class IOServer extends IOServerBase {
         this.modHandle = this.handle.getMsghandle(NetEventEnum.eventMod);
         this.cbHandle = this.handle.getMsghandleCallback();
         this.onCallback(
-            MsgId.MSG_SYSTEM_QUERYHTTPSERVER,
+            MsgId.MSG_SYSTEM_QUERY_VAR,
             (socket:IOServerSocket, key: string) => {
                 return key === 'name'
                 ? [ErrorEnum.ErrorOk, this.name]
@@ -204,6 +209,9 @@ export class IOServer extends IOServerBase {
 
     protected override configureServer(server: LiteServer): void {
         this.createEventMod(server);
+        for (const { event, handler } of this.clientEventHandlers) {
+            server.onClient(event, handler as any);
+        }
     }
 
     protected override getClientFactory(): ClientSocketClass {
@@ -256,13 +264,25 @@ export class IOServer extends IOServerBase {
         // this.onClientDisconnected(socket);
     }
 
+    onClient(event: clientEvent, handler: IOSocketEventFunc): void {
+        this.clientEventHandlers.push({ event, handler });
+        this.io?.onClient(event, handler as any);
+    }
+
     // 比较常用,可以保留重载
     /**
      * Initializes the accepted business connection and binds message dispatchers.
      */
-    onClientConnected(socket: IOServerSocket): void {
-        socket.createSession(this.name);
+    private onClientConnected(socket: IOServerSocket): void {
+        this.initSocketData(socket);
         this.bindSocketMsg(socket);
+        this.createSession(socket);
+    }
+
+    initSocketData(socket: IOServerSocket): void {}
+
+    createSession(socket: IOServerSocket): void {
+        socket.createSession(this.name);
     }
 
     /**
@@ -372,4 +392,3 @@ export class IOServer extends IOServerBase {
         return sock.asendMod(type, args);
     }
 }
-

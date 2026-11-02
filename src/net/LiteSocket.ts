@@ -14,6 +14,7 @@ import {
 import { LiteLogger } from "../public/log";
 import { NetEventEnum } from './msgid';
 import { msgData } from '../client';
+import { perfNow } from '../public/profile';
 
 /**
  * Lifecycle reason string or numeric diagnostic value such as retry count.
@@ -151,7 +152,7 @@ export abstract class LiteSocket {
 	/**
 	 * Monotonic timestamp of the latest accepted pong, in milliseconds.
 	 */
-	lastPong: number = performance.now();
+	lastPong: number = perfNow();
 
 	// 仅用于调试
 	private _stopPong = false;
@@ -169,7 +170,7 @@ export abstract class LiteSocket {
 	onPong(data: [number, number]) {
         const [start, peer] = data;
         // start is echoed from this endpoint; peer uses its own clock origin and is not compared.
-		const now = performance.now();
+		const now = perfNow();
 		this.delay = (now - start) / 2; //一来一回
 		// 保持10个延迟值，取平均值
 		if (this.delays.push(this.delay) > 10) {
@@ -184,14 +185,14 @@ export abstract class LiteSocket {
 	onPing(time: number) {
 		if (this._stopPong) return;
 		if (this.isConnected()) {
-			this.emit('pong', [time, performance.now()]);
+			this.emit('pong', [time, perfNow()]);
 		}
 	}
 
 	// return error str
 	/**
 	 * Checks pong age and sends a ping; returns pong-timeout when expired, otherwise an empty string.
-	 * @param now - Monotonic timestamp in milliseconds, usually performance.now().
+	 * @param now - Monotonic timestamp in milliseconds, usually perfNow().
 	 * @param heartbeatTimeout - Maximum accepted pong age in milliseconds.
 	 */
 	heartBreak(now: number, heartbeatTimeout: number) {

@@ -4,7 +4,7 @@
 MsgHandle 处理消息，包括callback消息
 */
 import { strict as assert } from 'assert';
-import { CostGuard, CostGuards } from '../public/profile';
+import { CostGuard, CostGuards, perfNow } from '../public/profile';
 import { getMsgName, NetEventEnum } from './msgid';
 import type { LiteLogger } from "../public/log";
 import type { EventCallbackFunc, EventMods } from '../public/Depends';
@@ -464,10 +464,10 @@ export class MsgHandleCB extends MsgHandle {
 		data.shift();
 		let rt = msgfunc.trySocket(socket, key, data);
 		if (isPromise(rt)) {
-			const time = performance.now();
+			const time = perfNow();
 			try {
 				rt = await rt;
-				const timeout = performance.now() - time;
+				const timeout = perfNow() - time;
 				if (timeout > 1000) {
 					this.logger.warn('handle_await timeout', key, getMsgName(key), 'cost', timeout);
 					// 不敢随意stringfy(data),

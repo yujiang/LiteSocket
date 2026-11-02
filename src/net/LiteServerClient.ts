@@ -6,6 +6,7 @@ import type { MessageRateLimit } from './LiteNet';
 import type { LiteLogger } from "../public/log";
 import { CommonSocket, DisconnectReason } from './LiteNet';
 import { LiteSocket } from './LiteSocket';
+import { perfNow } from '../public/profile';
 
 function raw2String(raw: RawData): string {
 	if (typeof raw === 'string') return raw;
@@ -46,7 +47,7 @@ export class LiteServerClient extends LiteSocket implements CommonSocket{
 	private handlers = new Map<string | symbol, (data?: any) => void>();
 	private disposed = false;
 	private messageTokens = 0;
-	private lastMessageTime = performance.now();
+	private lastMessageTime = perfNow();
 
 	/**
 	 * Creates LiteServerClient with the supplied dependencies and configuration.
@@ -190,7 +191,7 @@ export class LiteServerClient extends LiteSocket implements CommonSocket{
 	}
 
 	private limitTest(limit: MessageRateLimit): boolean {
-		const now = performance.now();
+		const now = perfNow();
 		this.messageTokens = Math.min(limit.burst,
 			this.messageTokens + (now - this.lastMessageTime) * limit.perSecond / 1000);
 		this.lastMessageTime = now;

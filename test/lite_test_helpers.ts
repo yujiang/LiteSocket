@@ -8,6 +8,7 @@ import type { LiteLogger } from '../src/public/log';
 import { getWsUrl, LiteOptionsInput, socketClientEvent } from '../src/net/LiteNet';
 import { clientEvent, LiteServer } from '../src/net/LiteServer';
 import { LiteClient, LiteClientOptionsInput } from '../src/net/LiteClient';
+import { perfNow } from '../src/public/profile';
 
 const waitTimeout = 3000;
 
@@ -26,9 +27,9 @@ export async function within<T>(promise: Promise<T>, description: string, timeou
 }
 
 export async function waitUntil(predicate: () => boolean, description: string): Promise<void> {
-    const deadline = performance.now() + waitTimeout;
+    const deadline = perfNow() + waitTimeout;
     while (!predicate()) {
-        assert(performance.now() < deadline, `Timed out: ${description}`);
+        assert(perfNow() < deadline, `Timed out: ${description}`);
         await delay(5);
     }
 }

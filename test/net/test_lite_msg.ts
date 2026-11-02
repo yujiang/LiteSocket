@@ -11,6 +11,7 @@ import { IOServer } from '../../src/net/IOServer';
 import type { IOServerSocket } from '../../src/net/IOServerSocket';
 import { NetEventEnum } from '../../src/net/msgid';
 import { ErrorEnum, FirstErrorRt } from '../../src/net/ErrorEnum';
+import { perfNow } from '../../src/public/profile';
 
 const helloMessage = 900001;
 const helloReplyMessage = 900002;
@@ -63,10 +64,10 @@ async function example() {
         console.log('客户端 await asend 得到结果：', sum);
 
         console.log('\n3. 异步消息超时（检查周期为 1 秒，请稍候）');
-        const started = performance.now();
+        const started = perfNow();
         const [timeoutCode] = await client.asend([timeoutMessage], 1000);
         if (timeoutCode !== ErrorEnum.Callback_timeout) throw new Error(`预期超时，实际错误码：${timeoutCode}`);
-        console.log(`客户端收到 Callback_timeout，实际等待 ${performance.now() - started}ms`);
+        console.log(`客户端收到 Callback_timeout，实际等待 ${perfNow() - started}ms`);
         console.log('超时参数是 1000ms，但需等到下一次轮询检查才会返回。');
     } finally {
         client.destroy('example finished');

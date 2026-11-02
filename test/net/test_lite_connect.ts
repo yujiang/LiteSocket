@@ -7,6 +7,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { WebSocket, WebSocketServer } from 'ws';
 import { LiteServerClient } from '../../src/net/LiteServerClient';
 import { getWsUrl, SocketCloseCode } from '../../src/net/LiteNet';
+import { perfNow } from '../../src/public/profile';
 import {
     connect, createClient, createLiteServer, createStalledServer,
     LiteServerTest, LiteClientTest, unusedAddress, waitUntil, within,
@@ -268,12 +269,12 @@ for (const useArgument of [false, true]) {
     test(`handshake timeout uses ${useArgument ? 'call argument' : 'constructor option'}`, async context => {
         const { url } = await createStalledServer(context);
         const client = createClient(context, { connectTimeout: useArgument ? 5000 : 250 });
-        const started = performance.now();
+        const started = perfNow();
         const result = await within(
             useArgument ? client.connectPromise(url, 250) : client.connectPromise(url),
             'handshake timeout',
         );
-        const elapsed = performance.now() - started;
+        const elapsed = perfNow() - started;
         assert.deepStrictEqual(result, [false, 'timeout']);
         // 给系统调度留出余量，同时防止实现意外使用默认的 5000ms。
         assert(elapsed >= 225 && elapsed < 2000, `timeout elapsed ${elapsed}ms`);
@@ -291,10 +292,10 @@ for (const useArgument of [false, true]) {
 test('connect() also honors the configured handshake timeout', async context => {
     const { url } = await createStalledServer(context);
     const client = createClient(context, { connectTimeout: 250 });
-    const started = performance.now();
+    const started = perfNow();
     assert.equal(client.connect(url), true);
     await client.events.waitForCount('close', 1);
-    const elapsed = performance.now() - started;
+    const elapsed = perfNow() - started;
     assert(elapsed >= 225 && elapsed < 2000, `timeout elapsed ${elapsed}ms`);
     assert.equal(client.events.count('connect_fail'), 1);
     assert.equal(client.events.entries[0].reason, 'timeout');

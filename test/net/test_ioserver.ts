@@ -40,11 +40,13 @@ test('handlers registered before listen process the first connection and busines
     assert.equal(server.io, undefined);
     const connections: IOServerSocket[] = [];
     const messages: Array<[number, string]> = [];
-    const onConnected = server.onClientConnected.bind(server);
-    context.mock.method(server, 'onClientConnected', (socket: IOServerSocket) => {
-        onConnected(socket);
-        connections.push(socket);
-    });
+    server.onClient('client-connect', socket => connections.push(socket));
+
+    // const onConnected = server.onClientConnected.bind(server);
+    // context.mock.method(server, 'onClientConnected', (socket: IOServerSocket) => {
+    //     onConnected(socket);
+    //     connections.push(socket);
+    // });
     server.modHandle.register(testMessage, (socket: IOServerSocket, value: string) => messages.push([socket.id, value]),
         null, SocketParamEnum.rawSocket, 'message-test');
     const url = await listen(server);
@@ -108,8 +110,8 @@ test('built-in server query returns valid callback results', async context => {
     const replies: unknown[] = [];
     client.on(NetEventEnum.eventCallbacked, data => replies.push(data));
     await connect(client, url);
-    client.emit(NetEventEnum.eventCallback, [MsgId.MSG_SYSTEM_QUERYHTTPSERVER, 'name', 201]);
-    client.emit(NetEventEnum.eventCallback, [MsgId.MSG_SYSTEM_QUERYHTTPSERVER, 'missing', 202]);
+    client.emit(NetEventEnum.eventCallback, [MsgId.MSG_SYSTEM_QUERY_VAR, 'name', 201]);
+    client.emit(NetEventEnum.eventCallback, [MsgId.MSG_SYSTEM_QUERY_VAR, 'missing', 202]);
     await waitUntil(() => replies.length === 2, 'server query replies');
     assert.deepStrictEqual(replies, [
         [201, [ErrorEnum.ErrorOk, 'io-test']],
@@ -216,11 +218,12 @@ test('relisten preserves handlers and does not duplicate connection setup', asyn
     const { server, errors } = createServer(context);
     const messages: string[] = [];
     let connections = 0;
-    const onConnected = server.onClientConnected.bind(server);
-    context.mock.method(server, 'onClientConnected', (socket: IOServerSocket) => {
-        onConnected(socket);
-        connections++;
-    });
+    server.onClient('client-connect', socket => connections++);
+    // const onConnected = server.onClientConnected.bind(server);    
+    // context.mock.method(server, 'onClientConnected', (socket: IOServerSocket) => {
+    //     onConnected(socket);
+    //     connections++;
+    // });
     server.modHandle.register(testMessage, (value: string) => messages.push(value),
         null, SocketParamEnum.noSocket, 'relisten-test');
     const handle = server.handle;

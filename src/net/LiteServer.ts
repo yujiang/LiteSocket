@@ -30,6 +30,7 @@ import { BroadcastExceptionDetails, LiteOptions, LiteOptionsInput, logHeadEx, ms
 import { LiteLogger } from "../public/log";
 import { LiteSocket, SocketReason } from './LiteSocket';
 import { EventEmitter } from './EventEmitter';
+import { perfNow } from '../public/profile';
 
 
 /**
@@ -341,7 +342,7 @@ export class LiteServer {
 	}
 
 	private performHeartbeatCheck(): void {
-		const now = performance.now();
+		const now = perfNow();
 		this.clients.forEach((client) => {
 			const rt = client.heartBreak(now, this.opts.heartbeatTimeout)
 			if (rt) {

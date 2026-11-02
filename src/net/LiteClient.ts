@@ -29,6 +29,7 @@ import { LiteLogger } from "../public/log";
 import { LiteSocket, SocketMsgType, SocketReason } from './LiteSocket';
 import { strict as assert } from 'node:assert';
 import { EventEmitter } from './EventEmitter';
+import { perfNow } from '../public/profile';
 
 /**
  * Lifecycle observer receiving a reason and optional error context.
@@ -320,7 +321,7 @@ export class LiteClient extends LiteSocket implements CommonClient {
 		this.url = url;
 		this.serverId = 0;
 		this.sys = undefined;
-		this.lastPong = performance.now();
+		this.lastPong = perfNow();
 		clearInterval(this.heartbeatTimer);
 		this.heartbeatTimer = null;
 		if (previous) {
@@ -466,7 +467,7 @@ export class LiteClient extends LiteSocket implements CommonClient {
 			attempt.connected = true;
 			this.retries = 0;
 			this.closeTimeout(attempt);
-			this.lastPong = performance.now();
+			this.lastPong = perfNow();
 			this.startHeartbeat(attempt);
 			attempt.resolve([true, '']);
 			this.emitEvent('connect', this.opts.autoReconnect ? ++this.connectedTimes : undefined);
@@ -622,7 +623,7 @@ export class LiteClient extends LiteSocket implements CommonClient {
 		this.heartbeatTimer = setInterval(() => {
 			if (this.attempt !== attempt) return;
 			// 心跳检测逻辑
-			const now = performance.now();
+			const now = perfNow();
 			const rt = this.heartBreak(now, this.opts.heartbeatTimeout);
 			if (rt) {
 				this.emitDisconnect(rt);

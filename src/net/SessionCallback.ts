@@ -7,6 +7,7 @@ import { CallbackFirstError, ErrorEnum, FirstErrorRt } from './ErrorEnum';
 import { W10 } from './msg';
 import { SendExceptionDetails } from './LiteNet';
 import { SocketReason } from './LiteSocket';
+import { perfNow } from '../public/profile';
 
 /**
  * Pending request tuple: event, mutable request, resolver, send timestamp, timeout in milliseconds.
@@ -98,7 +99,7 @@ export abstract class SessionCallback {
 	 * Returns the monotonic timestamp in milliseconds used by timeout checks.
 	 */
 	static getTime(): number {
-		return performance.now();
+		return perfNow();
 	}
 
 	// 用这个函数来简化一些写法
@@ -201,7 +202,7 @@ export abstract class SessionCallback {
 
 	/**
 	 * Settles expired requests using a monotonic millisecond timestamp; returns the number expired.
-	 * @param now - Monotonic timestamp in milliseconds, usually performance.now().
+	 * @param now - Monotonic timestamp in milliseconds, usually perfNow().
 	 * @returns Number of requests expired during this check.
 	 */
 	checkTimeout(now: number): number {

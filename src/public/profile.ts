@@ -18,10 +18,12 @@ export function isProfile(): boolean {
 	return profileGlobal;
 }
 
+// 单调计时,毫秒; 用于两点之间的间隔
 export function perfNow(){
 	return performance.now();
 }
 
+// Date.now(),毫秒; 
 export function dateNow(){
 	return Date.now();
 }
@@ -59,9 +61,9 @@ export function profileCallCost(
 	self: any,
 	args: any[],
 ): [number, number, any] {
-	const time = performance.now();
+	const time = perfNow();
 	const rt = func.apply(self, args);
-	const cost = performance.now() - time;
+	const cost = perfNow() - time;
 	return [time, cost, rt];
 }
 

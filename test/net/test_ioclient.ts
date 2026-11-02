@@ -9,6 +9,7 @@ import type { ClientParam } from '../../src/net/ClientSession';
 import { SocketParamEnum } from '../../src/net/msg';
 import { MsgId, NetEventEnum } from '../../src/net/msgid';
 import { ErrorEnum } from '../../src/net/ErrorEnum';
+import { perfNow } from '../../src/public/profile';
 import { createStalledServer, unusedAddress, waitUntil, within } from '../lite_test_helpers';
 
 const messageId = 900001;
@@ -101,9 +102,7 @@ test('handlers registered before connecting receive broadcast and server request
         null, SocketParamEnum.noSocket, 'broadcast');
     client.handle.getMsghandleCallback().register(messageId, (value: number) => [ErrorEnum.ErrorOk, value + 1],
         null, SocketParamEnum.noSocket, 'server-request');
-    const onConnected = server.onClientConnected.bind(server);
-    context.mock.method(server, 'onClientConnected', (socket: IOServerSocket) => {
-        onConnected(socket);
+    server.onClient('client-connect', socket => {
         socket.emit(NetEventEnum.eventBc, [messageId, 'hello']);
     });
     assert((await client.connectServer(url, disconnect))[0]);
@@ -250,7 +249,7 @@ test('disconnect callback can immediately reconnect and receives error details',
     oldSocket.emitDisconnect('close');
     assert.deepStrictEqual(events, [['error', error]]);
     assert(client.socket.isConnected());
-    assert.deepStrictEqual(await within(client.asend([MsgId.MSG_SYSTEM_QUERYHTTPSERVER, 'name']), 'new RPC'),
+    assert.deepStrictEqual(await within(client.asend([MsgId.MSG_SYSTEM_QUERY_VAR, 'name']), 'new RPC'),
         [ErrorEnum.ErrorOk, server.name]);
 });
 
@@ -268,7 +267,7 @@ test('IOClient owns the timeout interval and releases it on destroy', async cont
     assert.equal(interval.timer.hasRef(), false);
     const pending = client.asend([messageId], 10);
     await waitUntil(() => received() === 1, 'timeout request');
-    const now = performance.now();
+    const now = perfNow();
     context.mock.method(performance, 'now', () => now + 100);
     interval.run();
     assert.equal((await within(pending, 'timed out request'))[0], ErrorEnum.Callback_timeout);
@@ -307,7 +306,7 @@ test('IOClient preserves its transport and callbacks across automatic reconnect'
     assert.equal(interval.cleared, false);
     assert.equal(timers.length, timerCountBeforeDisconnect + 1);
     assert.equal(disconnects.length, 1);
-    assert.deepStrictEqual(await within(client.asend([MsgId.MSG_SYSTEM_QUERYHTTPSERVER, 'name']), 'RPC after reconnect'),
+    assert.deepStrictEqual(await within(client.asend([MsgId.MSG_SYSTEM_QUERY_VAR, 'name']), 'RPC after reconnect'),
         [ErrorEnum.ErrorOk, server.name]);
 });
 
@@ -324,7 +323,7 @@ test('IOClient does not destroy an automatic client after initial connection fai
     await waitUntil(() => socket.isConnected(), 'IOClient recovery after initial failure');
     assert.equal(client.socket, socket);
     assert.deepStrictEqual(disconnects, []);
-    assert.deepStrictEqual(await within(client.asend([MsgId.MSG_SYSTEM_QUERYHTTPSERVER, 'name']), 'recovered RPC'),
+    assert.deepStrictEqual(await within(client.asend([MsgId.MSG_SYSTEM_QUERY_VAR, 'name']), 'recovered RPC'),
         [ErrorEnum.ErrorOk, server.name]);
 });
 

@@ -4,18 +4,15 @@
 export enum MsgId {
 	// SYSTEM 保留 < 10
 	MSG_SYSTEM_DEFAULT = 1,
-	//MSG_SYSTEM_CALLBACK,
-	//MSG_SYSTEM_HELLO,
-	//MSG_SYSTEM_CONNECTIONID,
-	MSG_SYSTEM_QUERYHTTPSERVER, //
-	//MSG_SYSTEM_CONNECT,
-	//MSG_SYSTEM_DISCONNECT,
+	// socket问你的名字 key='name', 返回 this.name, 没有实际用途..
+	MSG_SYSTEM_QUERY_VAR, 
 	MSG_SYSTEM_END = 10,
 
-	// room
+	// room MSG
 	MSG_C2S_ROOM_OP,
 	MSG_C2S_ROOM_BC,
-	MSG_ROOM_END = 10,
+	MSG_ROOM_END = 20,
+	
 
     Max = 100, //自定义的error请从MAX之后开始!
 }

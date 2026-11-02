@@ -2,6 +2,7 @@ import { strict as assert } from 'node:assert';
 import { test, TestContext } from 'node:test';
 import { setTimeout as delay } from 'node:timers/promises';
 import { LiteClientOptionsInput } from '../../src/net/LiteClient';
+import { perfNow } from '../../src/public/profile';
 import {
     closeServer, createLiteServer, createStalledServer, LiteClientTest,
     terminateClient, unusedAddress, waitUntil, within,
@@ -115,7 +116,7 @@ test('heartbeat timeout reconnects through the same retry path', async context =
     const client = createClient(context, { heartbeatInterval: 20, heartbeatTimeout: 100 });
     assert.deepStrictEqual(await client.connectPromise(url), [true, '']);
     server.findById(client.getServerId()).stopPong(true);
-    client.lastPong = performance.now() - 200;
+    client.lastPong = perfNow() - 200;
     await client.events.waitForCount('connect', 2);
     assert.equal(client.events.count('pong-timeout'), 1);
     assert.equal(client.events.count('disconnect'), 1);

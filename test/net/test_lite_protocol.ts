@@ -14,6 +14,7 @@ import {
 } from '../../src/net/LiteNet';
 import { LiteSocket } from '../../src/net/LiteSocket';
 import { LiteClient, LiteClientOptionsInput } from '../../src/net/LiteClient';
+import { perfNow } from '../../src/public/profile';
 import { connect, createClient, createLiteServer, waitUntil } from '../lite_test_helpers';
 
 // 使用较小的上限方便构造边界包；当前实现比较 JSON 字符串的 length，测试包用 ASCII 控制长度。
@@ -358,8 +359,8 @@ test('bidirectional heartbeat stays connected and does not reach application han
     await waitUntil(() => client.lastPong > clientLastPong && peer.lastPong > serverLastPong, 'both sides receive pong');
     await delay(900);
     assertConnected(client, peer);
-    assert(performance.now() - client.lastPong < options.heartbeatTimeout);
-    assert(performance.now() - peer.lastPong < options.heartbeatTimeout);
+    assert(perfNow() - client.lastPong < options.heartbeatTimeout);
+    assert(perfNow() - peer.lastPong < options.heartbeatTimeout);
     assert(Number.isFinite(client.getArgDelay()) && client.getArgDelay() >= 0);
     assert(Number.isFinite(peer.getArgDelay()) && peer.getArgDelay() >= 0);
     assert.equal(applicationMessages, 0);
