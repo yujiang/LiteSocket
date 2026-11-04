@@ -112,4 +112,8 @@ export class IOServerSocket extends LiteServerClient implements ServerSessionSoc
     asendCallback(...args: msgData) : Promise<FirstErrorRt> {
         return this.asendMod(NetEventEnum.eventCallback, args);
     }
+    asendCallbackTimeout(timeout: number, ...args: msgData) : Promise<FirstErrorRt> {
+        return this.asendMod(NetEventEnum.eventCallback, args, timeout);
+    }
+    
 }

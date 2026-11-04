@@ -1,5 +1,5 @@
-import { ErrorEnum, IOClient, NetEventEnum } from "../client";
-import { MsgClientEnum } from "./MsgGame";
+import { ErrorEnum, IOClient, NetEventEnum } from "../../client";
+import { MsgClientEnum } from "../MsgGame";
 
 export class GameClient extends IOClient{
     override createHandle(){

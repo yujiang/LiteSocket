@@ -1,4 +1,4 @@
-import { msgData } from "../client";
+import { msgData } from "../../client";
 import { GameGate } from "./GameGate";
 
 export class Player {

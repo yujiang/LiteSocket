@@ -2,9 +2,9 @@ import { strict as assert } from "node:assert";
 import { createHeadLogger, createSliceLogger } from "../src/public/log";
 import { setTimeout as delay } from 'node:timers/promises';
 
-import {GameServer} from "../src/game/GameServer"
-import {GateServer} from "../src/game/GateServer"
-import {GameClient} from "../src/game/GameClient"
+import {GameServer} from "../src/game/game/GameServer"
+import {GateServer} from "../src/game/gate/GateServer"
+import {GameClient} from "../src/game/client/GameClient"
 import { setMsgNameFunc } from "../src/client";
 import { getGameMsgName } from "../src/game/MsgGame";
 

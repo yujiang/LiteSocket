@@ -1,13 +1,24 @@
 // gateServer 和 clients 连接
 
-import { ErrorEnum, isCallbackMod, msgData, NetEventEnum, W10 } from "../client";
-import { IOServer } from "../net/IOServer";
-import { IOServerSocket } from "../net/IOServerSocket";
-import { insertAt } from "../public/arrayUtils";
+import { ErrorEnum, isCallbackMod, msgData, NetEventEnum, W10 } from "../../client";
+import { IOServer } from "../../net/IOServer";
+import { IOServerSocket } from "../../net/IOServerSocket";
+import { insertAt } from "../../public/arrayUtils";
 import { GateGames } from "./GateGames";
-import { MsgGameGateEnum } from "./MsgGame";
+import { MsgGameGateEnum } from "../MsgGame";
 
 export class ClientData {
+	clients: GateClients;
+	games: GateGames;
+	constructor(clients: GateClients, game: GateGames) {
+		this.clients = clients;
+		this.games = game;
+	}	
+	close() {
+		this.clients = undefined;
+		this.games = undefined;
+	}
+
 	logined = false;
 	gameid = 0;
 	playerid = 0;
@@ -19,6 +30,7 @@ export class ClientData {
         this.logined = false;
         this.gameid = 0;
 	    this.playerid = 0;
+		this.close();
     }
 }
 
@@ -28,7 +40,7 @@ export class GateClients extends IOServer {
 
 	override bindSocketMsg(socket: IOServerSocket): void{
 		// 重定向event
-		socket.customData = new ClientData();
+		socket.customData = new ClientData(this,this.route);
 		this.bindRoute(socket);
 	}
 

@@ -249,6 +249,10 @@ export class IOClient {
     asendCallback(...args: msgData) {
         return this.asend(args);
     }
+    sendCallbackTimetout(timeout: number, ...args: msgData) {
+        return this.asend(args, timeout);
+    }
+
 
     /**
      * Sends variadic RPC arguments and resolves to the error code only.
