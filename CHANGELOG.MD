@@ -12,6 +12,9 @@ event(事件)改为多播
 ## 0.1.7
 JSDOC by AI
 
+## 0.2.0
+ioserver复用this.io的事件
+
 # 其他
 
 ## publish

@@ -1,9 +1,9 @@
 import { strict as assert } from 'node:assert';
 import { test, TestContext } from 'node:test';
 import { ErrorEnum, SocketParamEnum } from '../../src/client';
-import { GameClient } from '../../src/game/GameClient';
-import { GameServer } from '../../src/game/GameServer';
-import { GateServer } from '../../src/game/GateServer';
+import { GameClient } from '../../src/game/client/GameClient';
+import { GameServer } from '../../src/game/game/GameServer';
+import { GateServer } from '../../src/game/gate/GateServer';
 import { MsgClientEnum, MsgGameGateEnum } from '../../src/game/MsgGame';
 import { createSliceLogger } from '../../src/public/log';
 import { deferred } from '../io_test_helpers';
@@ -40,8 +40,8 @@ test('gate example logs in, enters game and chats in both directions', async con
     for (const [client, playerid] of [[c1, player1], [c2, player2]] as const) {
         assert.deepStrictEqual(await within(client.login(), 'login'), [ErrorEnum.ErrorOk]);
         assert.deepStrictEqual(await within(client.enterGame(game.id, playerid), 'enter game'), [ErrorEnum.ErrorOk]);
-        assert.equal(game.findPlayer(playerid)?.clientid, client.getSocketId());
-        assert.equal(game.findClient(client.getSocketId())?.playerid, playerid);
+        assert.equal(game.context.players.findPlayer(playerid)?.clientid, client.getSocketId());
+        assert.equal(game.context.players.findClient(client.getSocketId())?.playerid, playerid);
     }
     for (const [sender, receiver] of [[c1, c2], [c2, c1]]) {
         const received = deferred<[number, string]>();
@@ -95,8 +95,8 @@ test('exit confirms player cleanup before another client sends a chat', async co
     }
     const clientid = c2.getSocketId();
     assert.deepStrictEqual(await within(c2.exit(), 'exit'), [ErrorEnum.ErrorOk]);
-    assert.equal(game.findPlayer(player2), undefined);
-    assert.equal(game.findClient(clientid), undefined);
+    assert.equal(game.context.players.findPlayer(player2), undefined);
+    assert.equal(game.context.players.findClient(clientid), undefined);
     await waitUntil(() => !gate.clients.findById(clientid), 'client disconnect after exit');
     assert.equal(c2.logined, false);
     assert.equal(c2.gameid, 0);
@@ -117,12 +117,12 @@ test('client disconnect notifies game and releases both player indexes', async c
     await within(c1.enterGame(game.id, player1), 'enter game');
     const clientid = c1.getSocketId();
     c1.destroy('simulate client disconnect');
-    await waitUntil(() => !gate.clients.findById(clientid) && !game.findPlayer(player1), 'disconnect cleanup');
-    assert.equal(game.findClient(clientid), undefined);
+    await waitUntil(() => !gate.clients.findById(clientid) && !game.context.players.findPlayer(player1), 'disconnect cleanup');
+    assert.equal(game.context.players.findClient(clientid), undefined);
     // 同一个玩家可以从另一个连接重新进入。
     await within(c2.login(), 'replacement login');
     assert.deepStrictEqual(await within(c2.enterGame(game.id, player1), 'replacement enter'), [ErrorEnum.ErrorOk]);
-    assert.equal(game.findPlayer(player1)?.clientid, c2.getSocketId());
+    assert.equal(game.context.players.findPlayer(player1)?.clientid, c2.getSocketId());
 });
 
 test('duplicate and invalid player ids do not overwrite existing players', async context => {
@@ -132,8 +132,8 @@ test('duplicate and invalid player ids do not overwrite existing players', async
     await within(c1.enterGame(game.id, player1), 'enter1');
     assert.deepStrictEqual(await within(c2.enterGame(game.id, player1), 'duplicate player'),
         [ErrorEnum.ErrorError, 'not enterGame']);
-    assert.equal(game.findPlayer(player1)?.clientid, c1.getSocketId());
-    assert.equal(game.findClient(c2.getSocketId()), undefined);
+    assert.equal(game.context.players.findPlayer(player1)?.clientid, c1.getSocketId());
+    assert.equal(game.context.players.findClient(c2.getSocketId()), undefined);
     for (const playerid of [0, -1, 1.5]) {
         assert.deepStrictEqual(await within(c2.enterGame(game.id, playerid), 'invalid player'),
             [ErrorEnum.ErrorError, 'invalid playerid']);
@@ -148,7 +148,7 @@ test('disconnect while entering does not leave a player in game', async context 
     const release = deferred<void>();
     const clientid = c1.getSocketId();
     game.gate.onClientCallback(MsgGameGateEnum.gate2game_entergame, async (id: number, playerid: number) => {
-        game.enterGame(id, playerid);
+        game.context.players.enterGame(id, playerid);
         entered.resolve();
         await release.promise;
         return [ErrorEnum.ErrorOk];
@@ -159,8 +159,8 @@ test('disconnect while entering does not leave a player in game', async context 
     await waitUntil(() => !gate.clients.findById(clientid), 'gate sees disconnect');
     release.resolve();
     assert.equal((await within(entering, 'enter cancelled'))[0], ErrorEnum.Callback_disconnect);
-    await waitUntil(() => !game.findPlayer(player1), 'late entry cleanup');
-    assert.equal(game.findClient(clientid), undefined);
+    await waitUntil(() => !game.context.players.findPlayer(player1), 'late entry cleanup');
+    assert.equal(game.context.players.findClient(clientid), undefined);
 });
 
 test('concurrent enter and exit cannot leave one connection in two games', async context => {
@@ -173,7 +173,7 @@ test('concurrent enter and exit cannot leave one connection in two games', async
     const release = deferred<void>();
     context.after(() => release.resolve());
     game.gate.onClientCallback(MsgGameGateEnum.gate2game_entergame, async (clientid: number, playerid: number) => {
-        game.enterGame(clientid, playerid);
+        game.context.players.enterGame(clientid, playerid);
         entered.resolve();
         await release.promise;
         return [ErrorEnum.ErrorOk];
@@ -185,7 +185,7 @@ test('concurrent enter and exit cannot leave one connection in two games', async
     assert.deepStrictEqual(await within(c1.exit(), 'exit during entry'), [ErrorEnum.ErrorError, 'entering game']);
     release.resolve();
     assert.deepStrictEqual(await within(first, 'first entry result'), [ErrorEnum.ErrorOk]);
-    assert(game.findPlayer(player1));
-    assert.equal(other.findPlayer(player2), undefined);
+    assert(game.context.players.findPlayer(player1));
+    assert.equal(other.context.players.findPlayer(player2), undefined);
     assert.equal(c1.gameid, game.id);
 });

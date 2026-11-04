@@ -1,9 +1,9 @@
 import { strict as assert } from 'node:assert';
 import { test, TestContext } from 'node:test';
 import { ErrorEnum } from '../../src/client';
-import { GameClient } from '../../src/game/GameClient';
-import { GameServer } from '../../src/game/GameServer';
-import { GateServer } from '../../src/game/GateServer';
+import { GameClient } from '../../src/game/client/GameClient';
+import { GameServer } from '../../src/game/game/GameServer';
+import { GateServer } from '../../src/game/gate/GateServer';
 import { MsgClientEnum, MsgGameGateEnum } from '../../src/game/MsgGame';
 import { createSliceLogger } from '../../src/public/log';
 import { deferred } from '../io_test_helpers';
@@ -63,26 +63,26 @@ test('game message enums are exercised through the gate', async context => {
     const disconnectedClientId = client1.getSocketId();
     client1.destroy('test disconnect');
     await waitUntil(
-        () => !gate.clients.findById(disconnectedClientId) && !game.findClient(disconnectedClientId),
+        () => !gate.clients.findById(disconnectedClientId) && !game.context.players.findClient(disconnectedClientId),
         'gate2game_disconnect cleanup',
     );
-    assert.equal(game.findPlayer(123), undefined);
+    assert.equal(game.context.players.findPlayer(123), undefined);
 
     assert.deepStrictEqual(await within(client2.exit(), 'gate_exit and gate2game_exit'), [ErrorEnum.ErrorOk]);
-    assert.equal(game.findPlayer(456), undefined);
-    assert.equal(game.findClient(client2.getSocketId()), undefined);
+    assert.equal(game.context.players.findPlayer(456), undefined);
+    assert.equal(game.context.players.findClient(client2.getSocketId()), undefined);
 
     assert.deepStrictEqual(await within(client3.login(), 'game2gate_exit setup login'), [ErrorEnum.ErrorOk]);
     assert.deepStrictEqual(await within(client3.enterGame(game.id, 789), 'game2gate_exit setup enter'),
         [ErrorEnum.ErrorOk]);
     const kickedClientId = client3.getSocketId();
-    assert.equal(game.exitGame(789, 'kickoff'), true);
+    assert.equal(game.context.players.exitGame(789, 'kickoff'), true);
     await waitUntil(
         () => !gate.clients.findById(kickedClientId),
         'game2gate_exit disconnects the client',
     );
-    assert.equal(game.findPlayer(789), undefined);
-    assert.equal(game.findClient(kickedClientId), undefined);
+    assert.equal(game.context.players.findPlayer(789), undefined);
+    assert.equal(game.context.players.findClient(kickedClientId), undefined);
 
     // Keep the explicit message-name lists in sync when protocol messages are added.
     assert.deepStrictEqual(

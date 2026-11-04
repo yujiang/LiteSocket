@@ -1,5 +1,6 @@
-import { ErrorEnum, IOClient, NetEventEnum } from "../client";
-import { MsgClientEnum } from "./MsgGame";
+import { ErrorEnum, IOClient, NetEventEnum } from "../../client";
+import { MsgClientEnum } from "../MsgGame";
+import { bindGameMessage } from "./msghandle/game";
 
 export class GameClient extends IOClient{
     override createHandle(){
@@ -59,15 +60,12 @@ export class GameClient extends IOClient{
         }
         return rt;
     }
+
+    logId() {
+        return `[${this.playerid}]`
+    }
     
     fillMessage(){
-        this.onMessage(MsgClientEnum.c_chat, 
-            (id: number, msg: string)=>{
-            console.log(`player ${id} chat: ${msg}`)   
-        })
-        this.onBroadcast(MsgClientEnum.bc_chat, 
-            (id: number, msg: string)=>{
-            console.log(`player ${id} bcchat: ${msg}`)   
-        })
+        bindGameMessage(this);
     }
 }

@@ -209,6 +209,7 @@ export class IOServer extends IOServerBase {
 
     protected override configureServer(server: LiteServer): void {
         this.createEventMod(server);
+        // 外部的事件, io还没有创建, 需要在listen之后再绑定
         for (const { event, handler } of this.clientEventHandlers) {
             server.onClient(event, handler as any);
         }

@@ -1,13 +1,24 @@
 // gateServer 和 clients 连接
 
-import { ErrorEnum, isCallbackMod, msgData, NetEventEnum, W10 } from "../client";
-import { IOServer } from "../net/IOServer";
-import { IOServerSocket } from "../net/IOServerSocket";
-import { insertAt } from "../public/arrayUtils";
+import { ErrorEnum, isCallbackMod, msgData, NetEventEnum, W10 } from "../../client";
+import { IOServer } from "../../net/IOServer";
+import { IOServerSocket } from "../../net/IOServerSocket";
+import { insertAt } from "../../public/arrayUtils";
 import { GateGames } from "./GateGames";
-import { MsgGameGateEnum } from "./MsgGame";
+import { MsgGameGateEnum } from "../MsgGame";
 
 export class ClientData {
+	clients: GateClients;
+	games: GateGames;
+	constructor(clients: GateClients, game: GateGames) {
+		this.clients = clients;
+		this.games = game;
+	}	
+	close() {
+		this.clients = undefined;
+		this.games = undefined;
+	}
+
 	logined = false;
 	gameid = 0;
 	playerid = 0;
@@ -19,6 +30,7 @@ export class ClientData {
         this.logined = false;
         this.gameid = 0;
 	    this.playerid = 0;
+		this.close();
     }
 }
 
@@ -27,13 +39,13 @@ export class GateClients extends IOServer {
 	route: GateGames;
 
 	override initSocketData(socket: IOServerSocket): void{
-		socket.customData = new ClientData();
+		socket.customData = new ClientData(this,this.route);
 	}
 
-	override bindSocketMsg(socket: IOServerSocket): void{
-		// 重定向event
-		this.bindRoute(socket);
-	}
+    override bindSocketMsg(socket: IOServerSocket): void {
+        // 客户端业务消息走路由，Gate 自身消息由 bindRoute 单独分发。
+        this.bindRoute(socket);
+    }
 
 	override onClientDisconnected(socket: IOServerSocket): void {
 		super.onClientDisconnected(socket); 

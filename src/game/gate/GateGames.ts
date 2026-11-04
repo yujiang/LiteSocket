@@ -1,11 +1,21 @@
-// gateServer 和 games 连接
-
-import { NetEventEnum, isCallbackMod, msgData } from "../client";
-import { IOServer } from "../net/IOServer";
-import { IOServerSocket } from "../net/IOServerSocket";
+import { NetEventEnum, msgData, isCallbackMod } from "../../client";
+import { IOServer } from "../../net/IOServer";
+import { IOServerSocket } from "../../net/IOServerSocket";
 import { GateClients } from "./GateClients";
 
-export interface GameData  {
+// gateServer 和 games 连接
+export class GameData  {
+	clients: GateClients;
+	games: GateGames;
+	constructor(clients: GateClients, game: GateGames) {
+		this.clients = clients;
+		this.games = game;
+	}	
+	close() {
+		this.clients = undefined;
+		this.games = undefined;
+	}
+    
 	gameid: number;
 }
 
@@ -14,9 +24,7 @@ export class GateGames extends IOServer {
 	route: GateClients;
 
     override initSocketData(socket: IOServerSocket): void {
-		socket.customData = {
-			gameid: 0,
-		}
+		socket.customData = new GameData(this.route, this);
     }
 
     override bindSocketMsg(socket: IOServerSocket): void {
@@ -36,14 +44,14 @@ export class GateGames extends IOServer {
     // game的消息转发到client
     // 对应GameGate.sendClient
     async routeMsg(socket: IOServerSocket, stype: string, data: msgData) {
-        let clientid = data.shift(); // [client,msgid, ...]  => [msgid, ...]
+        let clientid = data.shift(); // [client,msgid, ...]  => [msgid, ...]      
         if (isCallbackMod(stype)) {
 			const session = data.pop();
 			const rt = await this.route.asendMod(clientid, NetEventEnum.eventCallback, data);
 			socket.emit(NetEventEnum.eventCallbacked, [session, rt]);
         }
         else {
-            this.route.findById(clientid)?.sendMod(NetEventEnum.eventMod, data);
+            this.route.sendMod(clientid, NetEventEnum.eventMod, data);
         }
     }
 

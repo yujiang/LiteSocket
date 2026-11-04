@@ -1,9 +1,9 @@
 import { strict as assert } from 'node:assert';
 import { test } from 'node:test';
 import { ErrorEnum, MsgId } from '../../src/client';
-import { GameClient } from '../../src/game/GameClient';
-import { GameServer } from '../../src/game/GameServer';
-import { GateServer } from '../../src/game/GateServer';
+import { GameClient } from '../../src/game/client/GameClient';
+import { GameServer } from '../../src/game/game/GameServer';
+import { GateServer } from '../../src/game/gate/GateServer';
 import { MsgClientEnum } from '../../src/game/MsgGame';
 import { createSliceLogger } from '../../src/public/log';
 import { deferred } from '../io_test_helpers';
@@ -43,19 +43,19 @@ test('game room namespaces cannot collide and leave/dismiss stop broadcasts', as
         }));
     }
     // 原先的 gameid + room 拼接会把 1/23 和 12/3 合并成 123。
-    games[0].opRoom('join', '23', clients[0].getSocketId());
-    games[1].opRoom('join', '3', clients[1].getSocketId());
+    games[0].context.players.opRoom('join', '23', clients[0].getSocketId());
+    games[1].context.players.opRoom('join', '3', clients[1].getSocketId());
     await flush();
-    games[0].bcRoom('23', MsgClientEnum.bc_chat, 123, 'isolated');
-    await flush();
-    assert.deepStrictEqual(received, [[[123, 'isolated']], []]);
-    games[0].opRoom('leave', '23', clients[0].getSocketId());
-    games[0].bcRoom('23', MsgClientEnum.bc_chat, 123, 'after leave');
+    games[0].context.players.bcRoom('23', MsgClientEnum.bc_chat, 123, 'isolated');
     await flush();
     assert.deepStrictEqual(received, [[[123, 'isolated']], []]);
-    games[0].opRoom('join', '23', clients[0].getSocketId());
-    games[0].opRoom('dismiss', '23', 0);
-    games[0].bcRoom('23', MsgClientEnum.bc_chat, 123, 'after dismiss');
+    games[0].context.players.opRoom('leave', '23', clients[0].getSocketId());
+    games[0].context.players.bcRoom('23', MsgClientEnum.bc_chat, 123, 'after leave');
+    await flush();
+    assert.deepStrictEqual(received, [[[123, 'isolated']], []]);
+    games[0].context.players.opRoom('join', '23', clients[0].getSocketId());
+    games[0].context.players.opRoom('dismiss', '23', 0);
+    games[0].context.players.bcRoom('23', MsgClientEnum.bc_chat, 123, 'after dismiss');
     await flush();
     assert.deepStrictEqual(received, [[[123, 'isolated']], []]);
     assert.deepStrictEqual(await within(clients[1].bcChat('own world'), 'world broadcast'), [ErrorEnum.ErrorOk]);

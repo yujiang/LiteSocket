@@ -2,9 +2,9 @@ import { strict as assert } from "node:assert";
 import { createHeadLogger, createSliceLogger } from "../src/public/log";
 import { setTimeout as delay } from 'node:timers/promises';
 
-import {GameServer} from "../src/game/GameServer"
-import {GateServer} from "../src/game/GateServer"
-import {GameClient} from "../src/game/GameClient"
+import {GameServer} from "../src/game/game/GameServer"
+import {GateServer} from "../src/game/gate/GateServer"
+import {GameClient} from "../src/game/client/GameClient"
 import { setMsgNameFunc } from "../src/client";
 import { getGameMsgName } from "../src/game/MsgGame";
 
@@ -21,8 +21,9 @@ async function run(){
     const gate = new GateServer(10, logclients, loggames);
 
     const log1 = createSliceLogger();
+    //const log1 = createHeadLogger("c1")
     const log2 = createSliceLogger();
-    const c1 = new GameClient('client1', createHeadLogger("c1"), { checktimeout: true });
+    const c1 = new GameClient('client1', log1, { checktimeout: true });
     const c2 = new GameClient('client2', log2, { checktimeout: true });
 
     const rt = await gate.start(gateport, {}, clientport, {});
@@ -54,7 +55,7 @@ async function run(){
     //const r2 = await c2.chat(c1.playerid, 'good job!');
     await c1.chatDes(player2, 'good job!');
     
-    game.exitGame(player1, "test");
+    game.context.players.exitGame(player1, "test");
     await delay(1000);
     assert(!c1.socket);
 
