@@ -1,3 +1,4 @@
+// 此文件放所有的全局变量, 
 import { Players } from "./Players";
 import type { GameGate } from "./GameGate";
 

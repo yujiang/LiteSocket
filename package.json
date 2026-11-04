@@ -1,6 +1,6 @@
 {
   "name": "@mosnpm/litesocket",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Lightweight WebSocket client and server with RPC support",
   "publishConfig": {
     "registry": "https://registry.npmjs.org/",

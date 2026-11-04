@@ -1,24 +1,24 @@
 import { msgData } from "../../client";
-import { GameGate } from "./GameGate";
+import { GlobalContext } from "./GlobalContext";
 
 export class Player {
     // level = 0;
     clientid = 0;
     playerid = 0;
 
-    gate: GameGate;
+    context: GlobalContext;
     
-    constructor(gate: GameGate, clientid: number, playerid: number) {
-        this.gate = gate;
+    constructor(context: GlobalContext, clientid: number, playerid: number) {
+        this.context = context;
         this.clientid = clientid;
         this.playerid = playerid;
     }
 
     sendClient(...msg: msgData){
-        this.gate.sendClient(this.clientid, msg);
+        this.context.gate.sendClient(this.clientid, msg);
     }
 
     exit() {
-        this.gate = undefined;
+        this.context = undefined;
     }
 }

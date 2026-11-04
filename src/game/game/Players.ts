@@ -26,7 +26,7 @@ export class Players{
     enterGame(clientid: number, playerid: number){
         let p = this.findPlayer(playerid);
         if(p || this.findClient(clientid)) return false;
-        p = new Player(this.context.gate,clientid, playerid) 
+        p = new Player(this.context,clientid, playerid) 
         this.Players[playerid] = p;
         this.Clients[clientid] = p;
         this.opRoom("join", ROOM_WORLD, clientid)

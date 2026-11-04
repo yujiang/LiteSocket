@@ -15,6 +15,10 @@ JSDOC by AI
 ## 0.2.0
 ioserver复用this.io的事件
 
+## 0.2.1
+msg extends by file(like web routes)
+
+
 # 其他
 
 ## publish
