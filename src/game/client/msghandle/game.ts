@@ -1,5 +1,4 @@
 import { IOClient } from "../../../client";
-import type { GameClient } from "../GameClient";
 import { GlobalClient } from "../GlobalClient";
 import { bindChatMessage } from "./game_chat";
 

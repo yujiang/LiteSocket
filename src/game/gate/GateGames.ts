@@ -1,10 +1,11 @@
+// gateServer 和 games 连接
+
 import { NetEventEnum, msgData, isCallbackMod } from "../../client";
 import { IOServer } from "../../net/IOServer";
 import { IOServerSocket } from "../../net/IOServerSocket";
 import { GateClients } from "./GateClients";
 import { GlobalGate } from "./GlobalGate";
 
-// gateServer 和 games 连接
 export class GameData  {
 	context: GlobalGate;
 	constructor(context: GlobalGate) {

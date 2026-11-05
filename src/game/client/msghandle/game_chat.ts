@@ -1,6 +1,5 @@
 import { IOClient } from "../../../client";
 import { MsgClientEnum } from "../../MsgGame";
-import type { GameClient } from "../GameClient";
 import { GlobalClient } from "../GlobalClient";
 
 function onChat(this: GlobalClient, id: number, msg: string) {

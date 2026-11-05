@@ -1,3 +1,4 @@
+// 此文件放所有的全局变量, 
 import { CPlayer } from "./CPlayer";
 import { GameClient } from "./GameClient";
 

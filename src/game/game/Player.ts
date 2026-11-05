@@ -1,7 +1,6 @@
 import { dateNow, ErrorEnum, FirstErrorRt, msgData } from "../../client";
 import { MsgClientEnum } from "../MsgGame";
 import { GlobalGame } from "./GlobalGame";
-import { ROOM_GAMES, ROOM_WORLD } from "./Players";
 
 export type ChatChannel = "world" | "games";
 

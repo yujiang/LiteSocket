@@ -1,10 +1,9 @@
+// player on client
 import { NetEventEnum, ErrorEnum, IOClient, msgData } from "../../client";
 import { MsgClientEnum } from "../MsgGame";
 import { GlobalClient } from "./GlobalClient";
 
-// player on client
 export class CPlayer {
-
     context: GlobalClient;
     client: IOClient;
     constructor(context: GlobalClient) {
@@ -12,7 +11,6 @@ export class CPlayer {
         this.client = context.client.client;
     }
 
-    // send callback to gate, timeout 为默认!
     asendGate(...msg: msgData){
         return this.client.asendMod(NetEventEnum.eventGateCallback, msg);
     }
