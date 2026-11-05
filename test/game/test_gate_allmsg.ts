@@ -17,9 +17,9 @@ test('game message enums are exercised through the gate', async context => {
     const client2 = new GameClient('all-message-client-2', logger, { checktimeout: true });
     const client3 = new GameClient('all-message-client-3', logger, { checktimeout: true });
     context.after(() => {
-        client1.destroy('test cleanup');
-        client2.destroy('test cleanup');
-        client3.destroy('test cleanup');
+        client1.client.destroy('test cleanup');
+        client2.client.destroy('test cleanup');
+        client3.client.destroy('test cleanup');
         game.gate.destroy('test cleanup');
         gate.clients.close();
         gate.games.close();
@@ -30,52 +30,52 @@ test('game message enums are exercised through the gate', async context => {
     assert(gate.games.findGame(game.id), 'game2gate_info registers the game with the gate');
 
     const url = `ws://127.0.0.1:${gate.clients.io.port}`;
-    assert((await within(client1.connectServer(url, () => {}), 'client1 connect'))[0]);
-    assert((await within(client2.connectServer(url, () => {}), 'client2 connect'))[0]);
-    assert((await within(client3.connectServer(url, () => {}), 'client3 connect'))[0]);
+    assert((await within(client1.client.connectServer(url, () => {}), 'client1 connect'))[0]);
+    assert((await within(client2.client.connectServer(url, () => {}), 'client2 connect'))[0]);
+    assert((await within(client3.client.connectServer(url, () => {}), 'client3 connect'))[0]);
 
-    assert.deepStrictEqual(await within(client1.login(), 'gate_login'), [ErrorEnum.ErrorOk]);
-    assert.deepStrictEqual(await within(client2.login(), 'gate_login client2'), [ErrorEnum.ErrorOk]);
-    assert.deepStrictEqual(await within(client1.enterGame(game.id, 123), 'gate_entergame'), [ErrorEnum.ErrorOk]);
-    assert.deepStrictEqual(await within(client2.enterGame(game.id, 456), 'gate2game_entergame client2'),
+    assert.deepStrictEqual(await within(client1.player.login(), 'gate_login'), [ErrorEnum.ErrorOk]);
+    assert.deepStrictEqual(await within(client2.player.login(), 'gate_login client2'), [ErrorEnum.ErrorOk]);
+    assert.deepStrictEqual(await within(client1.player.enterGame(game.id, 123), 'gate_entergame'), [ErrorEnum.ErrorOk]);
+    assert.deepStrictEqual(await within(client2.player.enterGame(game.id, 456), 'gate2game_entergame client2'),
         [ErrorEnum.ErrorOk]);
 
     const chat = deferred<[number, string]>();
-    client2.onMessage(MsgClientEnum.c_chat, (playerid: number, message: string) => chat.resolve([playerid, message]));
-    assert.deepStrictEqual(await within(client1.chatDes(456, 'all messages'), 'game_chat'), [ErrorEnum.ErrorOk]);
+    client2.client.onMessage(MsgClientEnum.c_chat, (playerid: number, message: string) => chat.resolve([playerid, message]));
+    assert.deepStrictEqual(await within(client1.player.chatDes(456, 'all messages'), 'game_chat'), [ErrorEnum.ErrorOk]);
     assert.deepStrictEqual(await within(chat.promise, 'c_chat delivery'), [123, 'all messages']);
 
     const broadcasts = [client1, client2, client3].map(() => [] as Array<[number, string]>);
     for (const [index, client] of [client1, client2, client3].entries()) {
-        client.onBroadcast(MsgClientEnum.bc_chat, (playerid: number, message: string) => {
+        client.client.onBroadcast(MsgClientEnum.bc_chat, (playerid: number, message: string) => {
             broadcasts[index].push([playerid, message]);
         });
     }
-    assert.deepStrictEqual(await within(client1.bcChat('world chat'), 'game_bcchat'), [ErrorEnum.ErrorOk]);
+    assert.deepStrictEqual(await within(client1.player.bcChat('world chat', 'world'), 'game_bcchat'), [ErrorEnum.ErrorOk]);
     await waitUntil(() => broadcasts[0].length === 1 && broadcasts[1].length === 1, 'bc_chat delivery');
     const barrier = deferred<void>();
-    client3.socket.on('broadcast-barrier', () => barrier.resolve());
-    gate.clients.findById(client3.getSocketId()).emit('broadcast-barrier');
+    client3.client.socket.on('broadcast-barrier', () => barrier.resolve());
+    gate.clients.findById(client3.client.getSocketId()).emit('broadcast-barrier');
     await within(barrier.promise, 'non-member broadcast barrier');
     assert.deepStrictEqual(broadcasts, [[[123, 'world chat']], [[123, 'world chat']], []]);
     assert.equal(gate.clients.io.getRoom(`${game.id}:world`)?.size(), 2);
 
-    const disconnectedClientId = client1.getSocketId();
-    client1.destroy('test disconnect');
+    const disconnectedClientId = client1.client.getSocketId();
+    client1.client.destroy('test disconnect');
     await waitUntil(
         () => !gate.clients.findById(disconnectedClientId) && !game.context.players.findClient(disconnectedClientId),
         'gate2game_disconnect cleanup',
     );
     assert.equal(game.context.players.findPlayer(123), undefined);
 
-    assert.deepStrictEqual(await within(client2.exit(), 'gate_exit and gate2game_exit'), [ErrorEnum.ErrorOk]);
+    assert.deepStrictEqual(await within(client2.player.exit(), 'gate_exit and gate2game_exit'), [ErrorEnum.ErrorOk]);
     assert.equal(game.context.players.findPlayer(456), undefined);
-    assert.equal(game.context.players.findClient(client2.getSocketId()), undefined);
+    assert.equal(game.context.players.findClient(client2.client.getSocketId()), undefined);
 
-    assert.deepStrictEqual(await within(client3.login(), 'game2gate_exit setup login'), [ErrorEnum.ErrorOk]);
-    assert.deepStrictEqual(await within(client3.enterGame(game.id, 789), 'game2gate_exit setup enter'),
+    assert.deepStrictEqual(await within(client3.player.login(), 'game2gate_exit setup login'), [ErrorEnum.ErrorOk]);
+    assert.deepStrictEqual(await within(client3.player.enterGame(game.id, 789), 'game2gate_exit setup enter'),
         [ErrorEnum.ErrorOk]);
-    const kickedClientId = client3.getSocketId();
+    const kickedClientId = client3.client.getSocketId();
     assert.equal(game.context.players.exitGame(789, 'kickoff'), true);
     await waitUntil(
         () => !gate.clients.findById(kickedClientId),

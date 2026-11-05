@@ -51,7 +51,7 @@ async function onEnterGame(socket: IOServerSocket, gameid: number, playerid: num
 }
     
 async function onExit(socket: IOServerSocket) :PFirstErrorRt {
-    const custom: ClientData = socket.customData.context;
+    const custom: ClientData = socket.customData;
     if (custom.entering) {
         return [ErrorEnum.ErrorError, "entering game"];
     }

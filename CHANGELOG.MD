@@ -18,6 +18,9 @@ ioserver复用this.io的事件
 ## 0.2.1
 msg extends by file(like web routes)
 
+## 0.2.2
+client also use context
+
 
 # 其他
 
