@@ -2,18 +2,16 @@ import { NetEventEnum, msgData, isCallbackMod } from "../../client";
 import { IOServer } from "../../net/IOServer";
 import { IOServerSocket } from "../../net/IOServerSocket";
 import { GateClients } from "./GateClients";
+import { GlobalGate } from "./GlobalGate";
 
 // gateServer 和 games 连接
 export class GameData  {
-	clients: GateClients;
-	games: GateGames;
-	constructor(clients: GateClients, game: GateGames) {
-		this.clients = clients;
-		this.games = game;
+	context: GlobalGate;
+	constructor(context: GlobalGate) {
+		this.context = context;
 	}	
 	close() {
-		this.clients = undefined;
-		this.games = undefined;
+        this.context = undefined;
 	}
     
 	gameid: number;
@@ -22,9 +20,15 @@ export class GameData  {
 
 export class GateGames extends IOServer {
 	route: GateClients;
+    context: GlobalGate;
+    setContext(context: GlobalGate) {
+        this.context = context;
+        this.route = context.clients;
+    }
+
 
     override initSocketData(socket: IOServerSocket): void {
-		socket.customData = new GameData(this.route, this);
+		socket.customData = new GameData(this.context);
     }
 
     override bindSocketMsg(socket: IOServerSocket): void {

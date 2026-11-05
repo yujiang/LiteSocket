@@ -5,6 +5,7 @@ import { GateGames } from "./GateGames";
 import { ListenResult } from "../../net/LiteServer";
 import { bindClientMessage } from "./msghandle/client";
 import { bindGameMessage } from "./msghandle/game";
+import { GlobalGate } from "./GlobalGate";
 
 // 各种消息
 // client->'g'->gateclients
@@ -25,12 +26,16 @@ export class GateServer {
     games: GateGames;
 
     id: number;
+
+    context: GlobalGate;
     constructor(id: number, loggerClients: LiteLogger, loggerGames: LiteLogger){
         this.id = id;
         this.clients = new GateClients("GateClients"+id, loggerClients, { checktimeout: true });
         this.games = new GateGames("GateGames"+id, loggerGames, { checktimeout: true });
-        this.games.route = this.clients;
-        this.clients.route = this.games;
+        
+        this.context = new GlobalGate(id, this.clients, this.games);
+        this.clients.setContext(this.context);
+        this.games.setContext(this.context);
 
         this.fillMessages();
         // this.roomMessage();

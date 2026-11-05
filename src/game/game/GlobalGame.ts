@@ -2,7 +2,7 @@
 import { Players } from "./Players";
 import type { GameGate } from "./GameGate";
 
-export class GlobalContext {
+export class GlobalGame {
     gameid: number;
     gate: GameGate;
     constructor(gameid: number, gate: GameGate) {

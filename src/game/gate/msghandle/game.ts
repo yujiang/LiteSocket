@@ -7,7 +7,7 @@ import { bindRoomMessage } from "./game_room";
 
 function onExit(socket:IOServerSocket, clientid: number, why: string) {
     const custom: GameData = socket.customData;                
-    const client = custom.clients.findById(clientid);
+    const client = custom.context.clients.findById(clientid);
     if (client){
         const custom: ClientData = client.customData;
         custom.exit(why);

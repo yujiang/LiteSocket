@@ -1,14 +1,16 @@
-import { msgData, MsgId } from "../../client";
+import { ErrorEnum, FirstErrorRt, msgData, MsgId } from "../../client";
 import { MsgGameGateEnum, MsgClientEnum } from "../MsgGame";
-import type { GlobalContext } from "./GlobalContext";
-import { Player } from "./Player";
+import type { GlobalGame } from "./GlobalGame";
+import { ChatChannel, Player } from "./Player";
 
 export const ROOM_WORLD = "world"
+export const ROOM_GAMES = "0:games"
+
 
 export class Players{
-    context: GlobalContext;
+    context: GlobalGame;
 
-    constructor(context: GlobalContext){
+    constructor(context: GlobalGame){
         this.context = context;
     }
 
@@ -29,14 +31,14 @@ export class Players{
         p = new Player(this.context,clientid, playerid) 
         this.Players[playerid] = p;
         this.Clients[clientid] = p;
-        this.opRoom("join", ROOM_WORLD, clientid)
+        this.opRoom("join", [ROOM_WORLD, ROOM_GAMES], clientid)
         return true;
     }
 
     private exit(p:Player){
         delete this.Clients[p.clientid];
         delete this.Players[p.playerid];
-        this.opRoom("leave", ROOM_WORLD, p.clientid)
+        this.opRoom("leave", [ROOM_WORLD, ROOM_GAMES], p.clientid)
         p.exit();
     }
 
@@ -57,15 +59,29 @@ export class Players{
     }
 
     // 广播消息到全服entergame的玩家
-    bcChat(playerid: number, msg: string){
-        this.bcRoom(ROOM_WORLD, MsgClientEnum.bc_chat, playerid, msg);
+    bcChat(playerid: number, msg: string, channel: ChatChannel): FirstErrorRt{
+        switch(channel) {
+            case "world":
+                this.bcRoom(ROOM_WORLD, MsgClientEnum.bc_chat, playerid, msg, channel);
+                break;
+            case "games":
+                this.bcRoom(ROOM_GAMES, MsgClientEnum.bc_chat, playerid, msg, channel);
+                break;
+            default:
+                return [ErrorEnum.ErrorError, "unknown channel"];
+        }
+        return [ErrorEnum.ErrorOk];
     }
 
     bcRoom(room: string, ...msg: msgData){
         this.context.gate.sendMsg(MsgId.MSG_C2S_ROOM_BC, room, msg);
     }    
 
-    opRoom(op: string, room: string, clientid: number){
+    bcGates(...msg: msgData){
+        this.bcRoom(ROOM_GAMES, ...msg);
+    }    
+
+    opRoom(op: string, room: string|string[], clientid: number){
         this.context.gate.sendMsg(MsgId.MSG_C2S_ROOM_OP, op, room, clientid);
     }    
 }

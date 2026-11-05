@@ -6,17 +6,15 @@ import { IOServerSocket } from "../../net/IOServerSocket";
 import { insertAt } from "../../public/arrayUtils";
 import { GateGames } from "./GateGames";
 import { MsgGameGateEnum } from "../MsgGame";
+import { GlobalGate } from "./GlobalGate";
 
 export class ClientData {
-	clients: GateClients;
-	games: GateGames;
-	constructor(clients: GateClients, game: GateGames) {
-		this.clients = clients;
-		this.games = game;
+	context: GlobalGate;
+	constructor(context: GlobalGate) {
+		this.context = context;
 	}	
 	close() {
-		this.clients = undefined;
-		this.games = undefined;
+        this.context = undefined;
 	}
 
 	logined = false;
@@ -37,9 +35,15 @@ export class ClientData {
 // 一个Gate连接多个Client
 export class GateClients extends IOServer {
 	route: GateGames;
+	context: GlobalGate;
+	setContext(context: GlobalGate) {
+		this.context = context;
+		this.route = context.games;
+	}
+		
 
 	override initSocketData(socket: IOServerSocket): void{
-		socket.customData = new ClientData(this,this.route);
+		socket.customData = new ClientData(this.context);
 	}
 
     override bindSocketMsg(socket: IOServerSocket): void {

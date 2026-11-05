@@ -3,18 +3,18 @@ import { MsgGameGateEnum } from "../MsgGame";
 import { GameGate } from "./GameGate";
 import { bindClientMessage } from "./msghandle/client";
 import { bindGateMessage } from "./msghandle/gate";
-import { GlobalContext } from "./GlobalContext";
+import { GlobalGame } from "./GlobalGame";
 
 
 export class GameServer{
     gate: GameGate;
     id: number;
-    context: GlobalContext;
+    context: GlobalGame;
     constructor(id: number, logger: LiteLogger, param: ClientParam, opts: LiteClientOptionsInput = {}){
         this.id = id;
         opts.autoReconnect = true;
         this.gate = new GameGate("GameServer"+id, logger, param, opts);
-        this.context = new GlobalContext(id, this.gate);
+        this.context = new GlobalGame(id, this.gate);
         this.fillMessages();
     }
 

@@ -23,7 +23,7 @@ async function onEnterGame(socket: IOServerSocket, gameid: number, playerid: num
     if (!Number.isSafeInteger(playerid) || playerid <= 0) {
         return [ErrorEnum.ErrorError, "invalid playerid"];
     }
-    const game = custom.games.findGame(gameid);
+    const game = custom.context.games.findGame(gameid);
     if (!game) {
         return [ErrorEnum.ErrorError, "game not found"]
     }
@@ -51,7 +51,7 @@ async function onEnterGame(socket: IOServerSocket, gameid: number, playerid: num
 }
     
 async function onExit(socket: IOServerSocket) :PFirstErrorRt {
-    const custom: ClientData = socket.customData;
+    const custom: ClientData = socket.customData.context;
     if (custom.entering) {
         return [ErrorEnum.ErrorError, "entering game"];
     }
@@ -63,7 +63,7 @@ async function onExit(socket: IOServerSocket) :PFirstErrorRt {
         custom.playerid = 0;
         return [ErrorEnum.ErrorOk];
     }
-    const game = custom.games.findGame(custom.gameid);
+    const game = custom.context.games.findGame(custom.gameid);
     if (!game) { //并没有在游戏中
         custom.logined = false;
         custom.gameid = 0;
