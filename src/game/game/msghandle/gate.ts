@@ -1,19 +1,13 @@
-import { ErrorEnum, FirstErrorRt } from "../../../client";
 import { MsgGameGateEnum } from "../../MsgGame";
 import { GameGate } from "../GameGate";
 import type { GlobalGame } from "../GlobalGame";
 
-function onEnterGame(this: GlobalGame, clientid:number, playerid: number) : FirstErrorRt {
-    const rt = this.players.enterGame(clientid, playerid);
-    if (rt) {
-        return [ErrorEnum.ErrorOk];
-    }
-    return [ErrorEnum.ErrorError, "not enterGame"];
+function onEnterGame(this: GlobalGame, clientid:number, playerid: number) {
+    return this.players.enterGame(clientid, playerid);
 }
         
-function onExit(this: GlobalGame, clientid:number) : FirstErrorRt {
-    this.players.exitClient(clientid);
-    return [ErrorEnum.ErrorOk];
+function onExit(this: GlobalGame, clientid:number) {
+    return this.players.exitClient(clientid);
 }
         
 function onDisconnect(this: GlobalGame, clientid: number) {

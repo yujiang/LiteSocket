@@ -1,4 +1,5 @@
 import { dateNow, ErrorEnum, FirstErrorRt, msgData } from "../../client";
+import { chat_error } from "../ErrorGame";
 import { MsgClientEnum } from "../MsgGame";
 import { GlobalGame } from "./GlobalGame";
 
@@ -26,19 +27,19 @@ export class Player {
     }
 
     //
-    onPrivateChat(player: Player, chat: string) : FirstErrorRt {
+    onPrivateChat(player: Player, chat: string) {
         this.sendClient(MsgClientEnum.c_chat,player.playerid, chat);
-        return [ErrorEnum.ErrorOk];
+        return ErrorEnum.ErrorOk;
     }
 
     // 广播消息到全服entergame的玩家
     prevBCTime = 0;
-    bcChat(msg: string, channel: ChatChannel): FirstErrorRt{
+    bcChat(msg: string, channel: ChatChannel){
         const players = this.context.players;
         // 先检测自己的发言限制 ... 
         const now = dateNow();
         if (now - this.prevBCTime < 1000) {
-            return [ErrorEnum.ErrorError, "bcChat too fast"];
+            return chat_error.bcChat_too_fast;
         }
         this.prevBCTime = now;
         return players.bcChat(this.playerid, msg, channel);

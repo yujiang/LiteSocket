@@ -7,6 +7,8 @@ export enum ErrorEnum {
 	/** Generic business or operation failure. */
 	ErrorError,
 
+	NoSession,
+
 	/** No usable transport is available for the request. */
 	Net_notconnect,
 
@@ -49,7 +51,7 @@ export function getErrorEnumString(error: ErrorEnum): string {
 /**
  * RPC result tuple: error code followed by optional result values.
  */
-export type FirstErrorRt = [ErrorEnum, ...any];
+export type FirstErrorRt = [number, ...any];
 /**
  * Promise resolving to a complete error-first RPC tuple.
  */
@@ -70,7 +72,7 @@ export type EventVoidFunc = (...args: any[]) => void;
 /**
  * RPC return value: error code, error-first tuple, or a promise of either.
  */
-export type EventReturn = ErrorEnum|FirstErrorRt|Promise<FirstErrorRt | ErrorEnum>;
+export type EventReturn = number|FirstErrorRt|Promise<FirstErrorRt | number>;
 /**
  * RPC handler receiving unpacked arguments and returning an error-first result.
  */

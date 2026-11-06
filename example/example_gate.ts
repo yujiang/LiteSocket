@@ -7,6 +7,7 @@ import {GateServer} from "../src/game/gate/GateServer"
 import {GameClient} from "../src/game/client/GameClient"
 import { ErrorEnum, setMsgNameFunc } from "../src/client";
 import { getGameMsgName } from "../src/game/MsgGame";
+import { chat_error, game2gate_info_error } from "../src/game/ErrorGame";
 
 setMsgNameFunc(getGameMsgName);
 
@@ -37,14 +38,14 @@ async function run(){
     const rt = await gate.start(gateport, {}, clientport, {});
     if (!rt[0]) throw new Error('gate.start failed');
     const rt1 = await game.start(`ws://127.0.0.1:${gateport}`);
-    if (rt1[0] !== ErrorEnum.ErrorOk) throw new Error('game.start failed');
+    if (rt1 !== ErrorEnum.ErrorOk) throw new Error('game.start failed');
     const rt2 = await game2.start(`ws://127.0.0.1:${gateport}`);
-    if (rt2[0] !== ErrorEnum.ErrorOk) throw new Error('game2.start failed');
+    if (rt2 !== ErrorEnum.ErrorOk) throw new Error('game2.start failed');
     
     const rt3 = await game3.start(`ws://127.0.0.1:${gateport}`);
     // because game3 has the same id as game2, so it should fail to register with the gate
-    if (rt3[0] === ErrorEnum.ErrorOk) throw new Error('game3.start succeeded but should have failed');
-    assert(rt3[1] == "Game already registered");
+    if (rt3 === ErrorEnum.ErrorOk) throw new Error('game3.start succeeded but should have failed');
+    assert(rt3 == game2gate_info_error.Game_already_registered);
 
     const [connected1] = await cc1.client.connectServer(`ws://127.0.0.1:${clientport}`, (reason, err) => {
         console.error('cc1客户端断线：', reason);
@@ -71,7 +72,10 @@ async function run(){
     await c2.enterGame(game.id, player2);
     await c3.enterGame(game2.id, player3);
 
-    const r1 = await c1.chatDes(c2.playerid, 'hello');
+    const r0 = await c1.chatDes(0, 'hello 0');
+    assert(r0 === chat_error.des_not_ingame)
+
+    const r1 = await c1.chatDes(c2.playerid, 'hello ' + c2.playerid);
     //console.log('c1 chatDes c2:', r1);
     const r2 = await c2.bcChat('world!', "world");
     //console.log('c2 bcChat:', r2);

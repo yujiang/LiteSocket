@@ -1,5 +1,7 @@
 import { ClientParam, ErrorEnum, EventReturn, FirstErrorRt, IOClient, LiteClientOptionsInput, LiteLogger, msgData, NetEventEnum, SocketParamEnum, SocketReason } from "../../client";
+import { game2gate_info_error } from "../ErrorGame";
 import { MsgGameGateEnum } from "../MsgGame";
+import { setTimeout as delay } from 'node:timers/promises';
 
 export type GameMessageHandler = (clientid: number, ...arg1: any[]) => void;
 export type GameCallbackHandler = (clientid: number, ...arg1: any[]) => EventReturn;
@@ -15,9 +17,9 @@ export class GameGate extends IOClient{
     }
 
     // start 只能调用一次!
-    async start(url: string) : Promise<[ErrorEnum, string]>{
+    async start(url: string) : Promise<number>{
         const [connected] = await this.connectServer(url, (reason: SocketReason, err?: any)=>this.onDisconnect(reason, err));
-        if(!connected) return [ErrorEnum.ErrorError, "Failed to connect"];
+        if(!connected) return ErrorEnum.ErrorOk;
         return this.onStated();
     }
 
@@ -26,14 +28,29 @@ export class GameGate extends IOClient{
         return this.sendId("onStated");
     }
 
-    async onReconnect(times: number) {
-        this.sendId("onReconnect");
+    onReconnect(times: number) {
+        this.continueSendId(0);
     }
 
-    async sendId(from: string) : Promise<[ErrorEnum, string]> {        // 连接和重连都进入!
-        const registered = await this.asendCallback(MsgGameGateEnum.game2gate_info, this.id);
-        return registered as [ErrorEnum, string];
+    async continueSendId(times: number){
+        const rt = await this.sendId("onReconnect");
+        // 如果老的还没有断线, 这有可能, 进程突然结束可以会这样, 所以不断尝试1分钟~
+        if (rt === game2gate_info_error.Game_already_registered && times < 60) {
+            await delay(1000);
+            this.continueSendId(times + 1);
+        }
+        this.onRegistedId(rt);
     }
+
+    async sendId(from: string) : Promise<number> {        // 连接和重连都进入!
+        const registered : number = 
+            (await this.asendCallbacke(MsgGameGateEnum.game2gate_info, this.id)) as number;
+        this.onRegistedId(registered);
+        return registered;
+    }
+
+    // 注册自己的id到gate的结果
+    onRegistedId(rt: number){}
 
     sendClient(clientid: number, data: msgData){
         data.unshift(clientid);

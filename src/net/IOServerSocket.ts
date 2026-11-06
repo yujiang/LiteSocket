@@ -91,9 +91,14 @@ export class IOServerSocket extends LiteServerClient implements ServerSessionSoc
      */
     async asendMod(type: string, msg: msgData, timeout = 0) : Promise<FirstErrorRt> {
         if (!this.session) {
-            return [ErrorEnum.ErrorError, "!this.session"];
+            return [ErrorEnum.NoSession];
         }
         return this.session?.asendSession(type, msg, timeout);
+    }
+
+    async asendMode(type: string, msg: msgData, timeout = 0) : Promise<number> {
+        const rt = await this.asendMod(type, msg, timeout);
+        if (rt) return rt[0];
     }
 
     /**
@@ -114,6 +119,13 @@ export class IOServerSocket extends LiteServerClient implements ServerSessionSoc
     }
     asendCallbackTimeout(timeout: number, ...args: msgData) : Promise<FirstErrorRt> {
         return this.asendMod(NetEventEnum.eventCallback, args, timeout);
+    }
+
+    asendCallbacke(...args: msgData) : Promise<number> {
+        return this.asendMode(NetEventEnum.eventCallback, args);
+    }
+    asendCallbackeTimeout(timeout: number, ...args: msgData) : Promise<number> {
+        return this.asendMode(NetEventEnum.eventCallback, args, timeout);
     }
     
 }

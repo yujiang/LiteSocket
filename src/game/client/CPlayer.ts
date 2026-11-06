@@ -46,12 +46,9 @@ export class CPlayer {
     }
     
     async chatDes(desid: number, msg: string){
-        const rt = await this.client.asendCallback(MsgClientEnum.game_chat,desid, msg);
-        if (rt[0] == ErrorEnum.ErrorOk){
-            // .. nothing            
-        }
-        else {
-            this.log(`chatDes error`, rt[1]);
+        const rt = await this.client.asendCallbacke(MsgClientEnum.game_chat,desid, msg);
+        if (rt != ErrorEnum.ErrorOk){
+            this.log(`chatDes error`, rt);
         }
         return rt;
     }

@@ -1,4 +1,5 @@
 import { ErrorEnum, FirstErrorRt, msgData, MsgId } from "../../client";
+import { chat_error, entergame_error, exit_error } from "../ErrorGame";
 import { MsgGameGateEnum, MsgClientEnum } from "../MsgGame";
 import type { GlobalGame } from "./GlobalGame";
 import { ChatChannel, Player } from "./Player";
@@ -25,14 +26,18 @@ export class Players{
         return this.Clients[id];
     }
 
-    enterGame(clientid: number, playerid: number){
-        let p = this.findPlayer(playerid);
-        if(p || this.findClient(clientid)) return false;
-        p = new Player(this.context,clientid, playerid) 
+    enterGame(clientid: number, playerid: number) {
+        if(this.findPlayer(clientid)) {
+            return entergame_error.gameserver_player_in_game;
+        }
+        if(this.findClient(clientid)) {
+            return entergame_error.gameserver_client_in_game;
+        }
+        const p = new Player(this.context,clientid, playerid) 
         this.Players[playerid] = p;
         this.Clients[clientid] = p;
         this.opRoom("join", [ROOM_WORLD, ROOM_GAMES], clientid)
-        return true;
+        return ErrorEnum.ErrorOk;
     }
 
     private exit(p:Player){
@@ -44,9 +49,9 @@ export class Players{
 
     exitClient(clientid: number){
         let p = this.findClient(clientid);
-        if(!p) return false;
+        if(!p) return exit_error.gameserver_not_found_client;
         this.exit(p);
-        return true;
+        return ErrorEnum.ErrorOk;
     }
 
     // why = kickoff ...
@@ -55,11 +60,11 @@ export class Players{
         if(!p) return false;
         this.context.gate.sendMsg(MsgGameGateEnum.game2gate_exit, p.clientid, why);
         this.exit(p);
-        return true;
+        return ErrorEnum.ErrorOk;
     }
 
     // 广播消息到全服entergame的玩家
-    bcChat(playerid: number, msg: string, channel: ChatChannel): FirstErrorRt{
+    bcChat(playerid: number, msg: string, channel: ChatChannel){
         switch(channel) {
             case "world":
                 this.bcRoom(ROOM_WORLD, MsgClientEnum.bc_chat, playerid, msg, channel);
@@ -68,9 +73,9 @@ export class Players{
                 this.bcRoom(ROOM_GAMES, MsgClientEnum.bc_chat, playerid, msg, channel);
                 break;
             default:
-                return [ErrorEnum.ErrorError, "unknown channel"];
+                return chat_error.bcChat_unknown_channel;
         }
-        return [ErrorEnum.ErrorOk];
+        return ErrorEnum.ErrorOk;
     }
 
     bcRoom(room: string, ...msg: msgData){

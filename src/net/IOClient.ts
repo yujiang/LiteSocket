@@ -253,6 +253,12 @@ export class IOClient {
         return this.asend(args, timeout);
     }
 
+    asendCallbacke(...args: msgData) {
+        return this.asende(args);
+    }
+    sendCallbackeTimetout(timeout: number, ...args: msgData) {
+        return this.asende(args, timeout);
+    }
 
     /**
      * Sends variadic RPC arguments and resolves to the error code only.
@@ -307,7 +313,7 @@ export class IOClient {
      * @param timeoutms - RPC timeout in milliseconds; zero uses timeoutMax (100000 by default). Enable checktimeout or poll manually.
      * @returns Promise resolving to the error code only.
      */
-    async asende(data: msgData, timeoutms = 0): Promise<ErrorEnum> {
+    async asende(data: msgData, timeoutms = 0): Promise<number> {
         if (!this.callback) return ErrorEnum.Net_notconnect;
         return this.callback.asendModReturnError(NetEventEnum.eventCallback, data, timeoutms);
     }
