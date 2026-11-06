@@ -19,8 +19,15 @@ function onExit(socket:IOServerSocket, clientid: number, why: string) {
 
 function onGameInfo(socket:IOServerSocket, gameid:number):FirstErrorRt{
     const custom: GameData = socket.customData;                
-    custom.gameid = gameid;
-    return [ErrorEnum.ErrorOk];
+    const oldgame = custom.context.games.findGame(gameid);
+    if (oldgame){
+        return [ErrorEnum.ErrorError, "Game already registered"];    
+    }
+    if (!custom.gameid){
+        custom.gameid = gameid;
+        return [ErrorEnum.ErrorOk];
+    }
+    return [ErrorEnum.ErrorError, "Socket already registered"];
 }
 
 export function bindGameMessage(games: GateGames){

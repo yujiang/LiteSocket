@@ -5,7 +5,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import {GameServer} from "../src/game/game/GameServer"
 import {GateServer} from "../src/game/gate/GateServer"
 import {GameClient} from "../src/game/client/GameClient"
-import { setMsgNameFunc } from "../src/client";
+import { ErrorEnum, setMsgNameFunc } from "../src/client";
 import { getGameMsgName } from "../src/game/MsgGame";
 
 setMsgNameFunc(getGameMsgName);
@@ -19,6 +19,8 @@ async function run(){
     const loggames = createSliceLogger();
     const game = new GameServer(100, loggame, { checktimeout: true });
     const game2 = new GameServer(200, loggame, { checktimeout: true });
+    const game3 = new GameServer(200, loggame, { checktimeout: true });
+
     const gate = new GateServer(10, logclients, loggames);
 
     const log1 = createSliceLogger();
@@ -34,10 +36,15 @@ async function run(){
 
     const rt = await gate.start(gateport, {}, clientport, {});
     if (!rt[0]) throw new Error('gate.start failed');
-    const rt2 = await game.start(`ws://127.0.0.1:${gateport}`);
-    if (!rt2) throw new Error('game.start failed');
-    const rt3 = await game2.start(`ws://127.0.0.1:${gateport}`);
-    if (!rt3) throw new Error('game2.start failed');
+    const rt1 = await game.start(`ws://127.0.0.1:${gateport}`);
+    if (rt1[0] !== ErrorEnum.ErrorOk) throw new Error('game.start failed');
+    const rt2 = await game2.start(`ws://127.0.0.1:${gateport}`);
+    if (rt2[0] !== ErrorEnum.ErrorOk) throw new Error('game2.start failed');
+    
+    const rt3 = await game3.start(`ws://127.0.0.1:${gateport}`);
+    // because game3 has the same id as game2, so it should fail to register with the gate
+    if (rt3[0] === ErrorEnum.ErrorOk) throw new Error('game3.start succeeded but should have failed');
+    assert(rt3[1] == "Game already registered");
 
     const [connected1] = await cc1.client.connectServer(`ws://127.0.0.1:${clientport}`, (reason, err) => {
         console.error('cc1客户端断线：', reason);
