@@ -27,7 +27,7 @@ export class Players{
     }
 
     enterGame(clientid: number, playerid: number) {
-        if(this.findPlayer(clientid)) {
+        if(this.findPlayer(playerid)) {
             return entergame_error.gameserver_player_in_game;
         }
         if(this.findClient(clientid)) {

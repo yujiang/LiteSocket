@@ -1,3 +1,4 @@
+import { ErrorEnum } from "../../../client";
 import { MsgGameGateEnum } from "../../MsgGame";
 import { GameGate } from "../GameGate";
 import type { GlobalGame } from "../GlobalGame";
@@ -11,7 +12,7 @@ function onExit(this: GlobalGame, clientid:number) {
 }
         
 function onDisconnect(this: GlobalGame, clientid: number) {
-    if (this.players.exitClient(clientid)){
+    if (this.players.exitClient(clientid) === ErrorEnum.ErrorOk){
         this.gate.sendMsg(MsgGameGateEnum.game2gate_exit, clientid, 'disconnect');
     }
 }

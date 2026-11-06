@@ -1,6 +1,7 @@
 import { strict as assert } from 'node:assert';
 import { test, TestContext } from 'node:test';
 import { ErrorEnum, SocketParamEnum } from '../../src/client';
+import { chat_error, entergame_error, exit_error } from '../../src/game/ErrorGame';
 import { GameClient } from '../../src/game/client/GameClient';
 import { GameServer } from '../../src/game/game/GameServer';
 import { GateServer } from '../../src/game/gate/GateServer';
@@ -27,7 +28,7 @@ async function setup(context: TestContext) {
         gate.games.close();
     });
     assert.deepStrictEqual(await within(gate.start(0, {}, 0, {}), 'gate start'), [true]);
-    assert(await within(game.start(`ws://127.0.0.1:${gate.games.io.port}`), 'game registration'));
+    assert.equal(await within(game.start(`ws://127.0.0.1:${gate.games.io.port}`), 'game registration'), ErrorEnum.ErrorOk);
     assert(gate.games.findGame(game.id), 'start must wait for game registration');
     const url = `ws://127.0.0.1:${gate.clients.io.port}`;
     assert((await within(c1.client.connectServer(url, () => {}), 'client1 connect'))[0]);
@@ -46,22 +47,22 @@ test('gate example logs in, enters game and chats in both directions', async con
     for (const [sender, receiver] of [[c1, c2], [c2, c1]]) {
         const received = deferred<[number, string]>();
         receiver.client.onMessage(MsgClientEnum.c_chat, (id: number, msg: string) => received.resolve([id, msg]));
-        assert.deepStrictEqual(await within(sender.player.chatDes(receiver.player.playerid, 'hello world'), 'chat RPC'), [ErrorEnum.ErrorOk]);
+        assert.equal(await within(sender.player.chatDes(receiver.player.playerid, 'hello world'), 'chat RPC'), ErrorEnum.ErrorOk);
         assert.deepStrictEqual(await within(received.promise, 'chat delivery'), [sender.player.playerid, 'hello world']);
         // 连接编号不能作为目标玩家编号使用。
-        assert.deepStrictEqual(await within(sender.player.chatDes(receiver.client.getSocketId(), 'wrong id'), 'connection id rejected'),
-            [ErrorEnum.ErrorError, 'des not in game']);
-        assert.deepStrictEqual(await within(sender.player.chatDes(999999, 'missing player'), 'chat error'),
-            [ErrorEnum.ErrorError, 'des not in game']);
+        assert.equal(await within(sender.player.chatDes(receiver.client.getSocketId(), 'wrong id'), 'connection id rejected'),
+            chat_error.des_not_ingame);
+        assert.equal(await within(sender.player.chatDes(999999, 'missing player'), 'chat error'),
+            chat_error.des_not_ingame);
     }
 });
 
 test('gate rejects entering before login and routing before entering', async context => {
     const { game, c1 } = await setup(context);
-    assert.deepStrictEqual(await within(c1.player.enterGame(game.id, player1), 'enter without login'), [ErrorEnum.ErrorError, 'not login']);
-    assert.deepStrictEqual(await within(c1.player.chatDes(1, 'not in game'), 'route without game'), [ErrorEnum.ErrorError, 'game not found']);
+    assert.deepStrictEqual(await within(c1.player.enterGame(game.id, player1), 'enter without login'), [entergame_error.not_login]);
+    assert.equal(await within(c1.player.chatDes(1, 'not in game'), 'route without game'), ErrorEnum.ErrorError);
     assert.deepStrictEqual(await within(c1.player.login(), 'login'), [ErrorEnum.ErrorOk]);
-    assert.deepStrictEqual(await within(c1.player.enterGame(999, player1), 'missing game'), [ErrorEnum.ErrorError, 'game not found']);
+    assert.deepStrictEqual(await within(c1.player.enterGame(999, player1), 'missing game'), [entergame_error.game_not_found]);
     assert.deepStrictEqual(await within(c1.player.exit(), 'exit without game'), [ErrorEnum.ErrorOk]);
     assert.equal(c1.player.logined, false);
 });
@@ -101,8 +102,7 @@ test('exit confirms player cleanup before another client sends a chat', async co
     assert.equal(c2.player.logined, false);
     assert.equal(c2.player.gameid, 0);
     assert.equal(c2.player.playerid, 0);
-    assert.deepStrictEqual(await within(c1.player.chatDes(player2, 'after exit'), 'chat after exit'),
-        [ErrorEnum.ErrorError, 'des not in game']);
+    assert.equal(await within(c1.player.chatDes(player2, 'after exit'), 'chat after exit'), chat_error.des_not_ingame);
     const replacement = new GameClient('replacement-client', c2.client.logger, { checktimeout: true });
     context.after(() => replacement.client.destroy('test cleanup'));
     assert((await within(replacement.client.connectServer(`ws://127.0.0.1:${gate.clients.io.port}`, () => {}),
@@ -131,12 +131,12 @@ test('duplicate and invalid player ids do not overwrite existing players', async
     await within(c2.player.login(), 'login2');
     await within(c1.player.enterGame(game.id, player1), 'enter1');
     assert.deepStrictEqual(await within(c2.player.enterGame(game.id, player1), 'duplicate player'),
-        [ErrorEnum.ErrorError, 'not enterGame']);
+        [entergame_error.gameserver_player_in_game]);
     assert.equal(game.context.players.findPlayer(player1)?.clientid, c1.client.getSocketId());
     assert.equal(game.context.players.findClient(c2.client.getSocketId()), undefined);
     for (const playerid of [0, -1, 1.5]) {
         assert.deepStrictEqual(await within(c2.player.enterGame(game.id, playerid), 'invalid player'),
-            [ErrorEnum.ErrorError, 'invalid playerid']);
+            [entergame_error.invalid_playerid]);
     }
     assert.deepStrictEqual(await within(c2.player.enterGame(game.id, player2), 'enter valid player'), [ErrorEnum.ErrorOk]);
 });
@@ -167,7 +167,7 @@ test('concurrent enter and exit cannot leave one connection in two games', async
     const { gate, game, c1 } = await setup(context);
     const other = new GameServer(200, c1.client.logger, { checktimeout: true });
     context.after(() => other.gate.destroy('test cleanup'));
-    assert(await within(other.start(`ws://127.0.0.1:${gate.games.io.port}`), 'second game'));
+    assert.equal(await within(other.start(`ws://127.0.0.1:${gate.games.io.port}`), 'second game'), ErrorEnum.ErrorOk);
     await within(c1.player.login(), 'login');
     const entered = deferred<void>();
     const release = deferred<void>();
@@ -181,8 +181,8 @@ test('concurrent enter and exit cannot leave one connection in two games', async
     const first = c1.player.enterGame(game.id, player1);
     await within(entered.promise, 'first entry pending');
     assert.deepStrictEqual(await within(c1.player.enterGame(other.id, player2), 'concurrent entry'),
-        [ErrorEnum.ErrorError, 'already in game']);
-    assert.deepStrictEqual(await within(c1.player.exit(), 'exit during entry'), [ErrorEnum.ErrorError, 'entering game']);
+        [entergame_error.already_in_game]);
+    assert.deepStrictEqual(await within(c1.player.exit(), 'exit during entry'), [exit_error.entering_game]);
     release.resolve();
     assert.deepStrictEqual(await within(first, 'first entry result'), [ErrorEnum.ErrorOk]);
     assert(game.context.players.findPlayer(player1));

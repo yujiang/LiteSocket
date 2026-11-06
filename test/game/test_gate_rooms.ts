@@ -23,7 +23,7 @@ test('game room namespaces cannot collide and leave/dismiss stop broadcasts', as
     assert.deepStrictEqual(await within(gate.start(0, {}, 0, {}), 'gate start'), [true]);
     const received: Array<Array<[number, string]>> = [[], []];
     for (const [index, game] of games.entries()) {
-        assert(await within(game.start(`ws://127.0.0.1:${gate.games.io.port}`), 'game registration'));
+        assert.equal(await within(game.start(`ws://127.0.0.1:${gate.games.io.port}`), 'game registration'), ErrorEnum.ErrorOk);
         const client = clients[index];
         assert((await within(client.client.connectServer(`ws://127.0.0.1:${gate.clients.io.port}`, () => {}), 'client connect'))[0]);
         await within(client.player.login(), 'login');

@@ -19,7 +19,7 @@ export class GameGate extends IOClient{
     // start 只能调用一次!
     async start(url: string) : Promise<number>{
         const [connected] = await this.connectServer(url, (reason: SocketReason, err?: any)=>this.onDisconnect(reason, err));
-        if(!connected) return ErrorEnum.ErrorOk;
+        if(!connected) return ErrorEnum.Net_notconnect;
         return this.onStated();
     }
 

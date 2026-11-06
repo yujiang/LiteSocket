@@ -39,7 +39,8 @@ async function onEnterGame(socket: IOServerSocket, gameid: number, playerid: num
         }
         // 进入游戏期间可能断线，此时断线回调还不知道玩家已进入游戏。
         if (!socket.connected) {
-            //game.sendMsg(MsgGameGateEnum.gate2game_disconnect, socket.id);
+            // 我注释掉, ai加了回来, 也有一定的道理.
+            game.sendMsg(MsgGameGateEnum.gate2game_disconnect, socket.id);
             return ErrorEnum.Callback_disconnect;
         }
         custom.gameid = gameid;

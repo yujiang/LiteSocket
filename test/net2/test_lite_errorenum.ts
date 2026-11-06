@@ -82,6 +82,20 @@ test('Net_notconnect: requests before connecting and after closing', async conte
     assert.deepStrictEqual(callback.callbacks, {});
 });
 
+test('NoSession: server-side requests without a session are rejected', async context => {
+    const { server, client, connect } = await createIOPair(context);
+    await connect();
+    const socket = server.findById(client.socket.getServerId());
+    assert(socket);
+    const session = socket.session;
+    socket.session = undefined;
+    try {
+        checkCode(await socket.asendMod(NetEventEnum.eventCallback, [messageId]), ErrorEnum.NoSession);
+    } finally {
+        socket.session = session;
+    }
+});
+
 test('Callback_not_find remains reserved after removal of asendSock', () => {
     assert.equal(getErrorEnumString(ErrorEnum.Callback_not_find), 'Callback_not_find');
 });

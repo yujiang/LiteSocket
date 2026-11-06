@@ -26,7 +26,7 @@ test('game message enums are exercised through the gate', async context => {
     });
 
     assert.deepStrictEqual(await within(gate.start(0, {}, 0, {}), 'gate start'), [true]);
-    assert(await within(game.start(`ws://127.0.0.1:${gate.games.io.port}`), 'game registration'));
+    assert.equal(await within(game.start(`ws://127.0.0.1:${gate.games.io.port}`), 'game registration'), ErrorEnum.ErrorOk);
     assert(gate.games.findGame(game.id), 'game2gate_info registers the game with the gate');
 
     const url = `ws://127.0.0.1:${gate.clients.io.port}`;
@@ -42,7 +42,7 @@ test('game message enums are exercised through the gate', async context => {
 
     const chat = deferred<[number, string]>();
     client2.client.onMessage(MsgClientEnum.c_chat, (playerid: number, message: string) => chat.resolve([playerid, message]));
-    assert.deepStrictEqual(await within(client1.player.chatDes(456, 'all messages'), 'game_chat'), [ErrorEnum.ErrorOk]);
+    assert.equal(await within(client1.player.chatDes(456, 'all messages'), 'game_chat'), ErrorEnum.ErrorOk);
     assert.deepStrictEqual(await within(chat.promise, 'c_chat delivery'), [123, 'all messages']);
 
     const broadcasts = [client1, client2, client3].map(() => [] as Array<[number, string]>);
@@ -76,7 +76,7 @@ test('game message enums are exercised through the gate', async context => {
     assert.deepStrictEqual(await within(client3.player.enterGame(game.id, 789), 'game2gate_exit setup enter'),
         [ErrorEnum.ErrorOk]);
     const kickedClientId = client3.client.getSocketId();
-    assert.equal(game.context.players.exitGame(789, 'kickoff'), true);
+    assert.equal(game.context.players.exitGame(789, 'kickoff'), ErrorEnum.ErrorOk);
     await waitUntil(
         () => !gate.clients.findById(kickedClientId),
         'game2gate_exit disconnects the client',
