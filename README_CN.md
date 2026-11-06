@@ -197,6 +197,7 @@ void main().catch(console.error);
 
 ```sh
 pnpm test       # 源码的连接、协议、RPC、事件、TLS 等测试
+pnpm testgame   # Gate/Game 示例测试
 pnpm test:lib   # 构建产物、浏览器声明和客户端运行时测试
 ```
 

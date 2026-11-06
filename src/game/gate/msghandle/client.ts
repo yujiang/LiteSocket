@@ -35,6 +35,10 @@ async function onEnterGame(socket: IOServerSocket, gameid: number, playerid: num
             [MsgGameGateEnum.gate2game_entergame, socket.id, playerid],
             5000);
         if (rt !== ErrorEnum.ErrorOk) {
+            // Game 可能已经创建玩家，只是回复迟到。清理完成后再允许重试入场。
+            if (rt === ErrorEnum.Callback_timeout && game.connected) {
+                await game.asendCallbackeTimeout(5000, MsgGameGateEnum.gate2game_exit, socket.id);
+            }
             return rt;
         }
         // 进入游戏期间可能断线，此时断线回调还不知道玩家已进入游戏。

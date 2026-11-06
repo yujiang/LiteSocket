@@ -7,8 +7,6 @@ export enum ErrorEnum {
 	/** Generic business or operation failure. */
 	ErrorError,
 
-	NoSession,
-
 	/** No usable transport is available for the request. */
 	Net_notconnect,
 
@@ -36,6 +34,8 @@ export enum ErrorEnum {
 
     /** Request serialization, size validation, or synchronous transport sending failed. */
     settleSendFailure,
+    /** No RPC session is attached. Appended to preserve existing wire codes. */
+    NoSession,
     /** Upper reserved boundary; allocate application error codes above this value. */
     Max = 100, //自定义的error请从MAX之后开始!
 }

@@ -14,6 +14,20 @@ import { waitUntil, within } from '../lite_test_helpers';
 const messageId = 920001;
 const covered = new Set<ErrorEnum>();
 
+test('built-in error codes retain their legacy wire numbers', () => {
+    const legacy = {
+        ErrorOk: 0, ErrorError: 1, Net_notconnect: 2, Msg_closed: 3, Handle_not_find: 4,
+        Callback_timeout: 5, Callback_not_find: 6, Callback_rt_invalid: 7,
+        Callback_filter_null: 8, Callback_disconnect: 9, Callback_await_error: 10,
+        Callback_rt_null: 11, Callback_bindsocket: 12, settleSendFailure: 13, Max: 100,
+    };
+    for (const [name, code] of Object.entries(legacy)) {
+        assert.equal(ErrorEnum[name as keyof typeof ErrorEnum], code, name);
+        if (code < ErrorEnum.Max) assert.equal(getErrorEnumString(code), name);
+    }
+    assert.equal(ErrorEnum.NoSession, 14);
+});
+
 function checkCode(result: FirstErrorRt, expected: ErrorEnum): void {
     assert.equal(result[0], expected, `预期 ${getErrorEnumString(expected)}，实际 ${getErrorEnumString(result[0])}`);
     covered.add(expected);

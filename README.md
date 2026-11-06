@@ -197,6 +197,7 @@ Examples for both builds are available in [`example/lib/`](example/lib/README.md
 
 ```sh
 pnpm test       # Source tests: connections, protocol, RPC, events, TLS, etc.
+pnpm testgame   # Gate/Game example tests
 pnpm test:lib   # Build outputs, browser declarations, and client runtime tests
 ```
 

@@ -8,10 +8,11 @@
   },
   "main": "./lib/full/index.js",
   "scripts": {
-    "test": "pnpm test:build && node --test --test-concurrency=1 .test-build/test/*/test_*.js",
+    "test": "pnpm test:build && node --test --test-concurrency=1 .test-build/test/net/test_*.js .test-build/test/net2/test_*.js .test-build/test/other/test_*.js",
     "test:build": "node -e \"require('node:fs').rmSync('.test-build', { recursive: true, force: true })\" && tsc -p tsconfig.test.json",
     "test:types": "tsc -p tsconfig.test.json --noEmit",
-    "test:game": "tsc -p test/game/tsconfig.json && node --test --test-concurrency=1 .test-build/test/game/test_*.js",
+    "testgame": "pnpm test:build && node --test --test-concurrency=1 .test-build/test/game/test_*.js",
+    "test:game": "pnpm testgame",
     "example:build": "tsc -p tsconfig.example.json",
     "example": "pnpm example:build && node .example-build/example/example_lite_msg.js",
     "example:lib:build": "node scripts/build-lib-examples.cjs",

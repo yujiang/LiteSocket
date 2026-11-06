@@ -7,7 +7,7 @@ pnpm install
 pnpm test
 ```
 
-`pnpm test` 使用本项目的 TypeScript 编译器检查源码和测试类型，再通过 Node.js 内置测试运行器执行 `net/`、`net2/`、`other/`、`game/` 中的测试。公共辅助文件位于 `test/` 根目录。示例保留在 `example/`，断言、超时、清理和边界场景放在测试目录。
+`pnpm test`（或 `npm test`）使用本项目的 TypeScript 编译器检查源码和测试类型，再通过 Node.js 内置测试运行器执行 `net/`、`net2/`、`other/` 中的测试。Gate/Game 测试单独使用 `pnpm testgame` 执行；`pnpm test:game` 保留为兼容别名。两个入口都会先清理并编译测试，类型检查仍包含全部源码和测试。公共辅助文件位于 `test/` 根目录。示例保留在 `example/`，断言、超时、清理和边界场景放在测试目录。
 
 编译前会清理 `.test-build/`，避免移动、重命名测试后仍运行旧产物。不依赖原业务项目或全局安装的 TypeScript、ts-node、Winston。
 
@@ -42,11 +42,13 @@ node --test .test-build/test/net2/test_lite_errorenum.js
 | JSON 协议、消息格式、发送失败 | `test_lite_protocol`、`test_lite_invalid_packets`、`test_lite_rpc_send_errors` | `pnpm test` |
 | 连接、主动断线、取消重连 | `test_lite_connect`、`test_lite_reconnect`、`test_ioclient` | `pnpm test` |
 | RPC、默认及显式超时、乱序响应 | `test_lite_sessions`、`test_lite_rpc_*` | `pnpm test` |
+| 只返回错误码的双向 RPC、自定义错误码、NoSession | `test_lite_rpc_error_only` | `pnpm test` |
 | 房间、限速、观察、WSS | `test/other/`、`test_lite_rate_limit`、`test_lite_wss` | `pnpm test` |
-| Gate/Game 示例、playerid、退出和广播 | `test/game/test_*.ts` | `pnpm test:game` |
+| Gate/Game 示例、playerid、退出和广播 | `test/game/test_*.ts` | `pnpm testgame` |
+| Game 重连注册、注册冲突、重试取消、入场超时清理 | `test_gate_reconnect`、`test_gate` | `pnpm testgame` |
 | 导出、浏览器运行、声明文件、模块解析 | `test/build/` | `pnpm test:lib` |
 
-新增 Gate 测试以 `test_*.ts` 命名，`test:game` 会自动编译和执行。`game` 仍为示例，不从 lib 导出；构建测试会检查这一点。
+新增 Gate 测试以 `test_*.ts` 命名，`testgame` 会自动编译和执行。`game` 仍为示例，不从 lib 导出；构建测试会检查这一点。
 
 协议外层使用 `{ e, d }`；普通业务消息为 `[msgid, ...args]`，RPC 请求尾部附带 session，响应为 `[session, [errorCode, ...result]]`。发送异常诊断仍使用 `eventName/data`，不能与线上的短字段混用。非法业务数组也必须被拒绝，且不影响下一条正常消息。
 
@@ -58,8 +60,18 @@ node --test .test-build/test/net2/test_lite_errorenum.js
 
 ```sh
 pnpm test
+pnpm testgame
 pnpm test:lib
 pnpm example:build
 ```
 
-当前 Game 示例只覆盖连接成功后的业务流程，不承诺游戏服断线后的重新注册、玩家会话恢复或跨进程容灾。若增加这些能力，应在 `test/game/` 增加真实断线、重连及状态恢复测试。
+Game 测试包含真实断线后的重新注册、首次连接失败后的自动注册、注册冲突和重试上限、销毁/断线取消重试，以及旧注册结果不得影响新连接。业务错误测试检查错误码和失败后的状态；入场超时测试通过 Session 的可控时间触发 5000ms 超时，验证已创建玩家的清理、迟到回复和重新入场。这里只验证当前同步创建玩家的处理流程，不承诺异步业务任务的取消、玩家会话恢复或跨进程容灾。
+
+`test_lite_rpc_error_only` 分别从客户端和服务端验证自定义错误码、参数传递、默认/显式超时边界、迟到回复、断线和回调清理。`test_lite_errorenum` 固定既有协议错误码数字，新增错误码应使用未占用的数字，避免新旧版本互相误读。
+
+查看 Game 源码覆盖率（不能等同于全库覆盖率）：
+
+```sh
+pnpm test:build
+node --experimental-test-coverage --test-coverage-include=".test-build/src/game/**/*.js" --test --test-concurrency=1 .test-build/test/game/test_*.js
+```
